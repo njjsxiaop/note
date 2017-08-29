@@ -1,0 +1,64 @@
+1、chattr和lsattr
+<1>引入   
+   如果你发现root用户都不能修改某个文件，大部分原因是使用chattr命令锁定该文件了。
+   chattr用于改变文件/目录的属性，lsattr用于查看文件/目录的属性。通过chattr修改属性能够提高系统的安全性。
+   chmod知识改变文件的rwx权限，chattr可以控制更底层的属性。
+
+<2>用法
+   chattr [ -RVf ] [ -v version ] [ mode ] files...
+   
+mode：
++ ：在原有参数设定基础上，追加参数。
+- ：在原有参数设定基础上，移除参数。
+= ：更新为指定参数设定。
+A：文件或目录的 atime (access time)不可被修改(modified), 可以有效预防例如手提电脑磁盘I/O错误的发生。
+S：硬盘I/O同步选项，功能类似sync。
+a：即append，设定该参数后，只能向文件中添加数据，而不能删除，多用于服务器日志文件安全，只有root才能设定这个属性。
+c：即compresse，设定文件是否经压缩后再存储。读取时需要经过自动解压操作。
+d：即no dump，设定文件不能成为dump程序的备份目标。
+i：设定文件不能被删除、改名、设定链接关系，同时不能写入或新增内容。i参数对于文件 系统的安全设置有很大帮助。
+j：即journal，设定此参数使得当通过mount参数：data=ordered 或者 data=writeback 挂 载的文件系统，文件在写入时会先被记录(在journal中)。如果filesystem被设定参数为 data=journal，则该参数自动失效。
+s：保密性地删除文件或目录，即硬盘空间被全部收回。
+u：与s相反，当设定为u时，数据内容其实还存在磁盘中，可以用于undeletion。
+
+常用到的是a和i：
+a选项强制只可添加不可删除，多用于日志系统的安全设定。
+而i是更为严格的安全设定，只有superuser (root) 或具有CAP_LINUX_IMMUTABLE处理能力（标识）的进程能够施加该选项。
+
+3、关闭告警声
+<1>关掉:  rmmod pcspkr
+<2>重新打开:  modprobe pcspkr
+
+4、sh -c 'useradd rcp-jenkins -u 1004 -s /bin/bash;su rcp-jenkins -c '\''./runmake v4 release noclean'\'''
+   sh "docker run --rm ${volume} ${DOCKER_IMAGE} sh -c \"${docker_cmd}\""
+<1>sh 
+-c string : -c表示命令需要从string中获取。string后面的参数会作为命令的参数。 
+
+<2>useradd
+-u：指定用户的UID(一组数字)
+-s：指定用户的登录shell
+-c：指定一段注释性描述
+
+eg: 
+useradd test123 -u 10000
+
+test123:x:10000:10000::/home/test123:/bin/bash
+
+<3>su
+-c command：变更账号，并执行command指令后再变回原来的使用者。
+
+5、man
+<1>查看命令用法  man command
+<2>查看内核函数用法  man getlocaltime
+<3>查看内核头文件	
+man time.h 		 对应time.h		(在默认路径/usr/include/中)
+man sys_time.h   对应sys/time.h (在默认路径/usr/include/中)
+
+6、dmidecode查看硬件信息
+http://man.linuxde.net/dmidecode
+
+7、svn使用
+<1>安装websvn-2.3.3-13.el7.noarch  //noarch是no architecture的缩写，说明这个包可以在各个不同的cpu(X64\X86等)上使用。
+<2>语法
+http://blog.csdn.net/ithomer/article/details/6187464
+

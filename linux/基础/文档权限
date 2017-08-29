@@ -1,0 +1,65 @@
+一、基本概念
+1、linux中任何档案都具有 user拥有者、group群组、other其他人 三个权限
+2、理解拥有者身份、用户支持的群组，方便管理多任务linux环境
+
+3、linux档案属性
+  属性    链接 拥有者 群组 档案容量 修改日期  档案名称
+dr-xr-x---. 21 root root  4096 Oct 20 16:01 .
+dr-xr-xr-x. 18 root root  4096 Oct 13 20:09 ..
+-rw-------.  1 root root  1323 Oct 14  2015 anaconda-ks.cfg
+-rw-------   1 root root    16 Oct 20 11:07 .aql_history
+-rw-------.  1 root root 16425 Oct 20 17:00 .bash_history
+-rw-r--r--.  1 root root    18 Dec 29  2013 .bash_logout
+-rw-r--r--   1 root root   197 Oct 17 17:43 .bash_profile
+-rw-r--r--   1 root root   208 Oct 17 17:43 .bashrc
+
+<1>档案属性 dr-xr-x---
+档案类型、档案拥有者的属性(读、写、可执行)、档案所属群组的属性(读、写、可执行)、其他人对此档案的属性(读、写、可执行)
+
+<2>档案类型
+d 目录
+- 档案
+l 链接(link file)
+b 可供存储的接口设备
+c 串行端口设备，如键盘、鼠标
+
+<3>x与目录
+eg：drwxr--r-- 3 root root 。。。 .ssh
+虽然有r属性，但非root用户不能进入该目录。
+如果需要开放某个目录，一定要开放x属性。
+
+<4>第二栏表示为链接占用的结点(i-node)：这个跟linkfile有关。如果是目录的话，对应该目录下的目录数。
+
+二、如何改变档案权限：
+0、什么时候需要使用
+如将文档copy给其他人时，需要修拥有者、群组。
+
+1、chgrp 改变档案所属群组  
+chgrp [-R] 群组 目录/文件
+-R 进行递归变更，即连同目录下的所有档案、目录都更新成为这个群组。变更目录所属群组时使用。
+注：群组名称必须在/etc/group中存在
+
+2、chown 改变档案拥有者
+chown [-R] 拥有者 目录/文件
+chown [-R] 拥有者:群组 目录/文件    //顺便直接修改群组
+-R 进行递归变更，即连同目录下的所有档案、目录都更新成为这个拥有者。变更目录拥有者时使用。
+注：群组名称必须在/etc/group中存在
+
+3、chmod 改变档案属性、SUID等特性
+-R递归
+<1>数字类型改变档案权限
+r:4 w:2 x:1
+eg： chmod 744 文件
+
+<2>符号类型改变档案权限
+	  u   +加入  r
+chmod g   -除去  w   档案/目录
+      o   =设定  x
+      a
+
+chmod u=rwx,go=rx .bashrc
+chmod a-x .bashrc
+chmod a+x .bashrc
+
+三、档案种类与附档名
+

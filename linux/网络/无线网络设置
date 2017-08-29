@@ -1,0 +1,79 @@
+http://blog.csdn.net/xinling1588/article/details/7583772
+https://wiki.centos.org/zh/HowTos/Laptops/Wireless?highlight=%25284965%2529
+
+CentOS 7如何连接无线网络，虽然查阅了相关网络资料，但是以下内容均为原创内容，只有干货，无废话。
+
+1.切换到超级用户
+
+[Oscar@localhost 桌面]$ su root
+
+2.查询可用的无线网卡，其中无线网卡号为wlp2s0
+
+[Oscar@localhost 桌面]$ iw dev
+phy#0
+   Interface wlp2s0
+       ifindex 3
+       wdev 0x1
+       addr a4:db:30:84:4b:1c
+       type managed
+
+注意，如果成功连接网络的话，应该是下面这样子的, ssid就是广播信道名称，也就是你的无线网络信号呀，广播信道就是最后一个
+
+[root@localhost 桌面]# iw dev
+phy#0
+   Interface wlp2s0
+       ifindex 3
+       wdev 0x1
+       addr a4:db:30:84:4b:1c
+       ssid liylr
+       type managed
+       channel 11 (2462 MHz), width: 40 MHz, center1: 2452 MHz
+
+
+3.启用无线卡
+
+[root@localhost Oscar]# ip link set wlp2s0 up
+
+
+4.查看无线网卡连接情况
+
+[Oscar@localhost 桌面]$ iw wlp2s0 link
+Not connected.    （表示没有任何连接）
+
+5.查看所有可用的无线网络信号
+
+[root@localhost 桌面]# iw wlp2s0 scan | grep SSID
+   SSID: USER-20150101NS_Network_2
+    SSID: Tenda_17BEF8
+    SSID: PC-20140723DBVC_Network_1
+    SSID: 123
+    SSID: Tenda_0A6410
+    SSID: xiaohui
+    SSID: Tenda_51E4F0
+    SSID: Nobody Can
+    SSID: TP-LINK_3C479
+    SSID: FUCK YOU
+    SSID: Tenda_046260
+    SSID: Tenda_188E80
+    SSID: liylr
+    SSID: XIAORUAN
+
+6.连接无线网
+
+[root@localhost 桌面]# wpa_supplicant -B -i wlp2s0 -c <(wpa_passphrase "liylr" "useradmin")
+Successfully initialized wpa_supplicant
+
+注意：其中liylr为要连接到的wifi信号，useradmin为无线网络的密码，请读者替换即可。
+
+7.分配IP地址（通过dhclient控制网卡进行网络操作获取IP）
+
+[root@localhost 桌面]# dhclient wlp2s0
+
+8.查看无线网卡地址信息，有ip地址表示网络连接成功了，可以上网冲浪咯
+
+[root@localhost 桌面]# ip addr show wlp2s03: wlp2s0: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc mq state UP qlen 1000
+    link/ether a4:db:30:84:4b:1c brd ff:ff:ff:ff:ff:ff
+    inet 192.168.1.101/24 brd 192.168.1.255 scope global dynamic wlp2s0
+      valid_lft 7195sec preferred_lft 7195sec
+    inet6 fe80::a6db:30ff:fe84:4b1c/64 scope link 
+      valid_lft forever preferred_lft forever

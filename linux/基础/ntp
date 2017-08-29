@@ -1,0 +1,46 @@
+1、设置ntp时间同步
+当要求各个结点统一系统时间时，推荐使用ntp自动同步各节点的时间。
+以3个节点为例，节点1(192.168.1.11)、节点2(192.168.1.12)、节点3(192.168.1.13)。
+以节点1作为始终同步服务器，节点2、3为客户端。
+<1>检查是否已安装ntp软件包
+rpm -qa | grep ntp
+
+<2>修改节点1中的/etc/ntp.conf配置文件
+按如下注释掉：
+
+# vi /etc/ntp.conf
+……
+#server 0.centos.pool.ntp.org
+#server 1.centos.pool.ntp.org
+#server 2.centos.pool.ntp.org
+……
+添加如下内容，设定同步的 IP 地址
+server 192.168.181.35
+……
+# Undisciplined Local Clock. This is a fake driver intended for backup
+# and when no outside source of synchronized time is available.
+此外，还需要去掉下面两行行首的注释符号#，下面为去掉后的语句。 
+server 127.127.1.0 # local clock
+fudge 127.127.1.0 stratum 10
+
+<3>节点1上启动ntpd服务，并设置开机启动
+systemctl start ntpd
+systemctl enable ntpd
+
+<4>节点1上查看nptd状态
+[root@rcp sysconfig]# ntpstat
+synchronised to local net at stratum 11 
+   time correct to within 12 ms
+   polling server every 64 s
+   
+<5>节点2、3校准本地时钟
+1)客户端不能运行ntpd服务
+systemctl stop ntpd
+systemctl disable ntpd
+
+2)ntpdate 192.168.1.11
+一段时间后，出现如下信息表示节点间时间同步成功。
+"2 Aug 15:10:09 ntpdate[7995]: step time server 10.43.241.216 offset 345.177079 sec"
+
+如果出现"12 Nov 11:07:28 ntpdate[1809]: no server suitable for synchronization found"，
+是由于server端的ntpd服务器刚刚运行，通常需要等待3-5分钟才能生效。因此，等待5分钟后，再尝试执行上述命令。

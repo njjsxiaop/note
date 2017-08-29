@@ -1,0 +1,24 @@
+[color]
+	ui = true
+[user]
+	name = ***
+	email = ***
+[core]
+	editor = vim
+[merge]
+	tool = vimdiff
+[mergetool]
+	prompt = false
+[diff]
+	tool = vimdiff
+[difftool]
+	prompt = false
+[alias]
+	ci = commit
+	co = checkout
+	st = status
+	br = branch
+	df = diff
+	lg = log --color --graph --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset' --abbrev-commit
+[push]
+	default = simple

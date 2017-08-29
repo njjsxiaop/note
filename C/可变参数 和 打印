@@ -1,0 +1,256 @@
+一、可变参数函数
+1、使用示例 ：
+通过vsnprintf()实现snprintf()功能：（更多详情可参阅linux man va_start手册）
+
+#include <stdio.h>
+#include <stdarg.h>
+int my_snprintf(char *s, int size, const char *fmt, ...) //该自定义函数，与系统提供的snprintf()函数相同。
+{
+    va_list ap;
+    int n=0;
+    va_start(ap, fmt); //获得可变参数列表
+    n=vsnprintf(s, size, fmt, ap); //写入字符串s
+    va_end(ap); //释放资源
+    return n; //返回写入的字符个数
+}
+
+int main() {
+    char str[1024];
+    my_snprintf( str, sizeof(str), "%d,%d,%d,%d",5,6,7,8);
+    printf("%s\n",str);
+    return 0;
+}
+
+2、可变参数列表va_list (va即：variable-argument)
+<0> 头文件
+#include <stdarg.h> 
+这里的stdarg.h位于/usr/lib/gcc/x86_64-redhat-linux/4.8.2/include/stdarg.h，是由gcc提供的。
+
+因此，在windows下执行pclint时会报错，需要将这部分错误忽略掉。
+	/*lint -save -e10 -e40 -e522 -e718*/
+	va_list ap;
+	va_start(ap, fmt);
+	vsnprintf(strbuf, sizeof(strbuf), fmt, ap);
+	va_end(ap);
+	/*lint -restore*/
+
+<1> va_list
+指针类型，用于指向可变参数。
+--------------------------------------------------------------------------------------
+#ifdef _M_ALPHA
+typedef struct {
+char *a0; /* pointer to first homed integer argument */
+int offset; /* byte offset of next parameter */
+} va_list;
+#else
+typedef char * va_list;
+#endif
+
+_M_ALPHA是指DEC ALPHA（Alpha AXP）架构。所以一般情况下va_list所定义变量为字符指针。
+---------------------------------------------------------------------------------------
+va_start与va_end成对被调用：开始调用va_start，获得各变量地址；结束调用va_end，释放相应的资源。
+
+<2> void va_start(va_list arg_ptr, argN) 
+arg_ptr就是前面定义的va_list类型的变量；argN表示最后一个固定参数。例如示例中的fmt。 
+当调用va_start后arg_ptr指向第一个可变参数。
+
+功能：以固定参数的地址为起点确定变参的内存起始地址，获取第一个参数的首地址。
+返回值：无。
+
+<3> type va_arg(va_list arg_ptr,type)
+每调用一次va_arg就会返回可变参数列表的下一个参数，并且下一个参数类型为type。
+不断调用va_arg，可以获取所有的可变参数。 
+
+功能：获取下一个参数的地址。
+返回值：根据传入参数类型决定返回值类型。
+
+<4> void va_end(va_list arg_ptr) 
+清空参数列表, 并置参数指针arg_ptr无效。
+
+功能：将arg_ptr指针置0。
+返回值：无。
+
+二、可变参数函数式宏
+1、ANSI C(标准C):
+<1>C99以前，可变参数表还是只能应用在真正的函数中，不能使用在宏中。
+<2>C99允许定义可变参数宏，使用保留名 __VA_ARGS__ 把可变参数表传递给宏。
+eg #define LOG(format, ...) fprintf(stdout, format, __VA_ARGS__)
+C99引入了对参数个数可变的函数式宏的正式支持。在宏"原型"的末尾加上...,宏定义中的伪宏 __VA_ARGS__ 就会在调用时替换成可变参数。 
+-----------------------------------------------------------------------------------------------
+推荐加上##，如下：
+#define tcfs_log(level, fmt, ...)     _tcfs_log(level, __FILE__, __LINE__, fmt, ##__VA_ARGS__); 
+-----------------------------------------------------------------------------------------------
+
+2、GUN C：
+在GUN C中，宏可以接受可变数目的参数，就像函数一样。
+GCC始终支持复杂的宏，它使用一种不同的语法(与C99相比)，可以给可变参数一个名字，就如同其它参数一样。可读性更强并且更容易进行描述。
+eg:
+#define pr_debug(fmt,arg...)	printk(KERN_DEBUG fmt, ##arg)
+eg:
+#define LOG(format, args...) 	fprintf(stdout, format, args) 
+
+3、可变参数宏中的## 	//存疑，后续确认
+...指可变参数。这类宏在被调用时，...表示零个或多个符号(包括其中的逗号)，被调用时，那些符号序列集合将代替__VA_ARGS__标识符。
+
+<1>在标准C中，不能省略可变参数，但可以传递一个空参数。
+eg: debug ("A message") //因为字符串后面没有逗号，所以是非法的
+增加逗号后，在上面的例子中，编译器仍然会有问题，因为宏展开后会有个多余的逗号。
+(GUN C在这种情况下可以完全忽略可变参数。)
+
+<2>为了解决这个问题，标准C中建议使用##。
+比较好的书写格式为：#define debug(format, ...) fprintf (stderr, format, ## __VA_ARGS__)
+这样，如果可变参数被忽略或为空，##将使预处理器去除掉它前面的那个逗号。
+
+三、界面输出
+1、打印函数
+#include <stdio.h>
+int printf(const char *format, ...); //输出到标准输出
+int fprintf(FILE *stream, const char *format, ...); //输出到文件/标准输出
+int sprintf(char *str, const char *format, ...); //输出到str
+int snprintf(char *str, size_t size, const char *format, ...); //输出到str
+
+以下函数功能与上面的一一对应，只是在函数调用时，把...对应的变量用va_list替代。在调用函数前ap要通过va_start()宏来动态获取。
+
+#include <stdarg.h>
+int vprintf(const char *format, va_list ap); //输出到标准输出
+int vfprintf(FILE *stream, const char *format, va_list ap); //输出到文件/标准输出
+int vsprintf(char *str, const char *format, va_list ap); //输出到str
+int vsnprintf(char *str, size_t size, const char *format, va_list ap); //输出到str
+
+注：linux环境下是:vsnprintf，VC6环境下是:_vsnprintf。其他类似。
+
+2、printf、sprintf
+<1>关于“S格式符”的用法的简单说明：
+eg:
+%-20s //左对齐，若实际小于20位，按实际输出
+%+20d //右对齐
+
+1)％ms ：输出的字符串占m列，如果字符串本身长度大于m，则突破m的限制，将字符串全部输出；若串长度小于m，则在左边补空格。
+2)％-ms：如果字符串长度小于m，则在m列范围内，字符串向左靠，右补空格。
+3)％m.ns：输出占m列，但只取字符串中左端n个字符。这n个字符输出在m列范围的右侧，左补空格。
+eg:printf("%5.5s", "12345678");
+输出 12345
+4)％-m.ns：其中的m、n的含义同上，n个字符输出在m列范围的左侧，右补空格。如果n>m，则m自动取n值，即保证n个字符正常输出。
+
+<2>int sprintf( char *buffer, const char *format, [ argument] … );
+1)参数1和2不能重复：
+char buf[100] = "12345%s";
+sprintf(buf,buf,"abcd");
+VS中会报错，Linux下buf中的结果会出现不可预知的错误。
+
+2)可以覆盖buf中的值，并且buf足够大，结果会加\0。
+char buf[100] = "12345";
+sprintf(buf,"%s","abcd");
+
+3)可以采用这种方式将a中的值和buf中的值合并，并且能替换a中的%s。
+char a[] = "abcdef%s"
+char buf[100] = "12345";
+sprintf(buf + strlen(buf),a,"abcd");
+
+
+3、time、gettimeofday、localtime
+<1>gettimeofday()头文件/usr/include/sys/time.h
+   localtime()/usr/include/time.h
+//通过 man 函数名 来查询
+
+<2>time()和gettimeofday()
+两个都是glibc获取时间的函数,gettimeofday支持返回微妙的精度,time返回秒的精度,在性能上有差别吗???
+基本上没有性能差别, 因为time其实就是把gettimeofday包装了一层。
+但是测试过程中发现 time比gettimeofday性能好了一点点, 可能是time函数的接口形式简单吧, 堆栈处理的快。
+
+4、basename  //返回路径中的文件名部分
+头文件：#include <libgen.h>   
+函数声明：char *basename(char *path);
+
+四、字符串处理函数
+1、strcpy
+<1>原型：char *strcpy(char *dest, const char *src);
+<2>说明：把src字符串复制到dest指向的地址空间，并返回dest。
+<3>限制：src和dest所指内存区域不可以重叠；dest必须有足够的空间来容纳src的字符串。
+<4>结束符说明：如果dest空间足够大，就会把src中的字符串结束符拷贝到dest中。
+
+2、stncpy
+<1>原型：char *strncpy(char *dest,char *src,size_t n);
+<2>说明：把src字符串中的前n个字节复制到dest指向的地址空间，并返回dest。
+<3>结束符说明：
+n小于src长度时：将src的前n个字符复制到dest中，dest结尾不自动添加'\0'，需要手动添加'\0'。
+n等于src长度时：将src的前n个字符复制到dest中，dest结尾不自动添加'\0'，需要手动添加'\0'。
+n大于src长度时：将src的前n个字符复制到dest中(以'\0'填充直至n)，会将src中的字符串结束符拷贝到dest中。
+
+3、sprintf
+<1>原型：int sprintf( char *buffer, const char *format, [ argument] … );
+<2>说明：把格式化的字符串写入缓冲区中。返回写入buffer的字符数(不计入'\0')，出错返回-1。
+<3>结束符说明：如果buf空间足够大，就会把src中的字符串结束符拷贝到buf中。
+
+4、snprintf
+<1>原型：int snprintf(char *str, size_t size, const char *format, ...)
+<2>说明：成功返回欲写入的字符串长度，失败返回负值。
+<3>结束符说明：
+如果格式化后的字符串长度 < size，则将此字符串全部复制到str中，并给其后添加一个字符串结束符('\0')；
+如果格式化后的字符串长度 >= size，则只将其中的(size-1)个字符复制到str中，并给其后添加一个字符串结束符('\0')。
+
+5、strtol与atoi
+http://blog.sina.com.cn/s/blog_6c26d57b01012l0x.html
+long int strtol(const char *nptr,char **endptr,int base);
+int atoi(const char *nptr);
+<1>头文件均为 #include <stdlib.h>
+
+<2>由于atoi返回值为int，处理范围有限，必要的时候可以使用strtol将字符串转换为整数。
+
+对于nptr指向的字符串，其开头和结尾处的空格被忽视，字符串中间的空格被视为非法字符。
+
+strtol()函数检测到第一个非法字符时，立即停止检测，其后的所有字符都会被当作非法字符处理。
+合法字符串会被转换为long int, 作为函数的返回值。
+非法字符串，即从第一个非法字符的地址，被赋给endptr。
+
+1)参数endptr：
+多数情况下，endptr设置为NULL, 即不返回非法字符串。
+
+2)参数base：范围为0、2~36，决定了字符串以被转换为整数的权值。
+可以被转换的合法字符依据base而定，eg:
+当base为2时，合法字符为‘0’，‘1’；
+base为8时，合法字符为‘0’，‘1’，……‘7’；
+base为10时，合法字符为‘0’，‘1’，……‘9’；
+base 为16时，合法字符为‘0’，‘1’，……‘9’，‘a’，……‘f’；
+base为24时，合法字符为‘0’，……‘9’，‘a’，……‘n’，
+base为36时，合法字符为‘0’，……‘9’，‘a’，……‘z’；等等。
+不区分大小写，当字符合法时，‘0’，……‘9’依次被转换为十进制的0～9，‘a’，……‘z’一次北转换为十进制的10～35。
+
+另外，如果base为0，且字符串不是以0x(或者0X)开头，则按十进制进行转化。
+如果base为0或者16，并且字符串以0x（或者0X）开头，那么，x（或者X）被忽略，字符串按16进制转化。
+如果base不等于0和16，并且字符串以0x(或者0X)开头，那么x被视为非法字符。
+
+<3>举例
+1) 引入原因
+char *a = "4294967295";
+printf("%d\n",atoi(a));
+printf("%ld\n",strtol(a,NULL,10));
+printf("%d\n",strtol(a,NULL,10));
+printf("%u\n",strtol(a,NULL,10));
+int b = (int)strtol(a,NULL,10);
+printf("%d\n", b);
+unsigned c = (int)strtol(a,NULL,10);
+printf("%u\n",c);
+
+结果：
+-1
+4294967295
+-1
+4294967295
+-1
+4294967295
+
+2) 返回错误
+char buffer[20]="10379cend$3";
+char *stop;
+printf("%d\n",strtol(buffer, &stop, 2));
+printf("%s\n", stop);
+输出结果：
+2
+379cend$3
+
+
+注：
+1、strcpy\sprintf：同样可以做字符串拷，strcpy的效率要高于sprintf。
+
+  	

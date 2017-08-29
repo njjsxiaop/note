@@ -1,0 +1,138 @@
+一、
+1、host IP：10.43.31.116
+  虚机eth0：192.168.31.130
+   docker0: 172.17.42.1
+contianer1：172.17.0.10
+contianer2：172.17.0.11
+
+容器内部可以ping通 host IP/虚机eth0/docker0
+主机cmd只能ping通  虚机eth0
+
+2、容器内部：
+   /etc/hosts
+   /etc/host
+   /etc/resolv.conf
+   
+3、检查本地系统是否支持转发（关系到容器能否访问外部网络）
+[root@rcp001 ipv4]# sysctl net.ipv4.ip_forward
+net.ipv4.ip_forward = 1
+1表示支持，0表示不支持
+
+修改方法：
+[root@rcp001 ipv4]# sysctl -w net.ipv4.ip_forward=1
+-w表示写（修改）参数
+
+如果运行容器run时设置--ip_forward=true，docker会自动设置系统的ip_forward为1.
+
+4、容器之间相互访问
+<1>容器的网络拓扑是否已经互联。默认情况下，所有容器都会被连接到docker0网桥上
+<2>本地系统的防火墙iptables是否允许通过
+
+二、IP命令用法：
+1、ip link
+
+$ ip link add A type veth peer name B
+
+$ ip link set A netns 82999
+$ ip netns exec 82999 ip addr add 10.1.1.1/32 dev A
+$ ip netns exec 82999 ip link set A up
+$ ip netns exec 82999 ip route add 10.1.1.2/32 dev A
+
+$ ip link set B netns 83073
+$ ip netns exec 83073 ip addr add 10.1.1.2/32 dev B
+$ ip netns exec 83073 ip link set B up
+$ ip netns exec 83073 ip route add 10.1.1.1/32 dev B
+
+# ip link set dev eth0 up 等于传统的 # ifconfig eth0 up
+
+三、命名空间
+$ docker inspect -f '{{.State.Pid}}'  63f36... //查找进程ID
+2778
+$ mkdir -p /var/run/netns //创建网络命名空间
+$ lin -s /proc/2778/ns/net  /var/run/netns/2778  //软链接  源  目的 //创建网络命名空间
+
+四、dockerfile相关
+1、dockerfile中安装的软件都是装在容器镜像中的，容器运行时存在于容器中。并不在主机中。
+2、dockerfile中的所有操作（如yum update -f等）都是针对容器镜像的，与主机无关。
+
+五、主机ping通容器
+由上文可知：
+容器内  可以ping通  主机IP/虚机eth0/docker0
+虚机    可以ping通  主机IP/容器
+主机cmd 只能ping通  虚机eth0
+
+为了让主机能够ping通容器/docker0,我们需要在主机中配置路由，
+route add 172.17.1.0 MASK 255.255.255.0 192.168.31.130
+其中docker0 172.17.1.254/24
+    虚机eth0 192.168.31.130
+将172.17.1.0/24数据包路由到虚机eth0，由虚机eth0转发到docker0网桥，再转发到各个容器中。
+
+六、docker网络相关参数
+1、/etc/sysconfig/docker中启动docker服务时生效
+<1>--bip=CIDR：设置docker0的IP地址和子网范围，使用CIDR格式（如：172.17.1.254/24）。该参数仅配置docker0，对其他自定义网桥无效。
+   修改该参数时，保证宿主机上没有docker0，或者docker0的ip和指定的ip保持一致，否则重启docker.service会失败！
+<2>--fixed-cidr=CIDR：限制Docker容器获取IP的范围。Docker容器默认获取IP范围为docker0网桥的整个子网范围，此参数可以将其缩小到某个子网范围内。
+<3>--mtu=BYTE：指定docker0的最大传输单元（MTU）
+
+2、docker run命令设置
+<1>--iptables=true|false 是否允许docker设置宿主机的iptables规则，默认true允许。
+<2>--icc=true|false 是否允许docker容器之间相互通讯，默认true允许。true或者false改变的是iptables的FORWARD链规则，因此需要--iptables=true，该参数才能使用。
+<3>--ip-forward=true|false 是否将ip_forward参数设为1，默认为True，用于打开linux内核的ip数据包转发功能。（与外界通讯）
+<4>--net=bridge/host/container/none 指定docker网络模式
+     
+
+七、遇到问题：
+1、docker exec进入容器，缺少文件或文件夹访问权限
+解决方法：http://www.linuxidc.com/Linux/2015-03/115124.htm
+在CentOS7中运行NodeJs的容器，发现挂载的本地目录在容器中没有执行权限，经过各种验证和Google搜索，找到了问题的原因，这里做一下记录。
+原因是CentOS7中的安全模块selinux把权限禁掉了，至少有以下三种方式解决挂载的目录没有权限的问题：
+<1>在运行容器的时候，给容器加特权：
+示例：docker run -i -t --privileged=true -v /home/docs:/src waterchestnut/nodejs:0.12.0
+docker run -d -p 5000:5000 --name=localregistry -v /home/localregistry/images:/data/images --privileged=true --restart=always index.alauda.cn/library/registry 
+<2>临时关闭selinux：
+示例：su -c "setenforce 0"
+之后执行：docker run -i -t -v /home/docs:/src waterchestnut/nodejs:0.12.0
+注意：之后要记得重新开启selinux，命令：su -c "setenforce 1"
+<3>添加selinux规则，将要挂载的目录添加到白名单：
+示例：chcon -Rt svirt_sandbox_file_t /home/docs
+之后执行：docker run -i -t -v /home/docs:/src waterchestnut/nodejs:0.12.0
+
+2、docker本地镜像库
+<1>为什么上传的时候只能是localhost：5000？如何改成其他主机名？
+答：/etc/hosts中配置主机名 eg： 192.168.31.130   localregistry.rcp001  重启主机生效
+镜像库主机名为localregistry.rcp001（端口5000是registry中默认端口）。
+    /etc/sysconfig/docker中加入镜像库地址:
+	ADD_REGISTRY='--add-registry localregistry.rcp001:5000'
+    INSECURE_REGISTRY='--insecure-registry localregistry.rcp001:5000'
+	重启docker.service:
+	systemctl enable docker
+	systemctl restart docker
+<2>docker上传镜像时，自动使用https导致上传失败？
+解决方法：http://blog.csdn.net/wangtaoking1/article/details/44180901
+因为Docker从1.3.X之后，与docker registry交互默认使用的是https，然而此处搭建的私有仓库只提供http服务，
+所以当与私有仓库交互时就会报上面的错误。为了解决这个问题需要在启动docker server时增加启动参数为默认使用http访问。
+修改docker启动配置文件，Ubuntu下配置文件地址为：/etc/init/docker.conf，
+在其中增加–insecure-registry 192.168.112.136:5000。修改完之后需要重启docker。
+<3>docker registry容器内部镜像存放路径：/tmp/registry/repositories/library
+docker run -d -p 5000:5000 --name=localregistry -v /home/registry:/tmp/registry --privileged=true --restart=always index.alauda.cn/library/registry 
+镜像保存在本地/home/registry,即使容器删除，新启一个容器-v /home/registry:/tmp/registry，之前上传的镜像仍然存在。
+<4>docker search localregistry.rcp001:5000/hello-world//查询私有库中的镜像
+<5>docker login 10.43.175.41:5000
+要向私有仓库上传或获取镜像时，如果需要登录，先使用docker login命令
+
+
+3、docker本地镜像路径（pull下来的镜像）：
+/var/lib/docker/
+容器：
+[root@localregistry docker]# find -name "e8d00101147a5a3db29a0df04d59f2ec91b1eb41fccb7f5f84210c4b70b5ac93"
+./devicemapper/metadata/e8d00101147a5a3db29a0df04d59f2ec91b1eb41fccb7f5f84210c4b70b5ac93
+./devicemapper/mnt/e8d00101147a5a3db29a0df04d59f2ec91b1eb41fccb7f5f84210c4b70b5ac93
+./containers/e8d00101147a5a3db29a0df04d59f2ec91b1eb41fccb7f5f84210c4b70b5ac93
+对应的镜像：
+[root@localregistry docker]# find -name "f7dc621663e4a2c9b5749b068acdb8229c4b63efb5404712c25fdb32d4626e9b"
+./devicemapper/metadata/f7dc621663e4a2c9b5749b068acdb8229c4b63efb5404712c25fdb32d4626e9b
+./devicemapper/mnt/f7dc621663e4a2c9b5749b068acdb8229c4b63efb5404712c25fdb32d4626e9b
+./graph/f7dc621663e4a2c9b5749b068acdb8229c4b63efb5404712c25fdb32d4626e9b
+
+
+	

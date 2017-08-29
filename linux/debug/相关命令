@@ -1,0 +1,47 @@
+1、ldd  //list dynamic dependencies 列出动态库依赖关系。
+
+在制作自己的发行版时经常需要判断某条命令需要哪些共享库文件的支持，以确保指定的命令在独立的系统内可以可靠的运行。
+在Linux环境下通过ldd命令即可实现，在终端下执行：ldd /bin/ls //ldd命令通常使用"-v"或"--verbose"选项来显示所依赖的动态连接库的尽可能的详细信息。即可得到/bin/ls命令的相关共享库文件列表：
+
+在 ldd 命令打印的结果中，“=>”左边的表示该程序需要连接的共享库之 so 名称，右边表示由 Linux 的共享库系统找到的对应的共享库在文件系统中的具体位置。默认情况下，/etc/ld.so.conf 文件中包含有默认的共享库搜索路径。
+
+antlr3c使用动态库时：
+[root@Master uspp]# ldd ./build/test/ft_lb/lb_test 
+        linux-vdso.so.1 =>  (0x00007ffe1f787000)
+        libantlr3c.so => not found
+        libpthread.so.0 => /lib64/libpthread.so.0 (0x00007f47c3307000)
+        libstdc++.so.6 => /lib64/libstdc++.so.6 (0x00007f47c2fff000)
+        libm.so.6 => /lib64/libm.so.6 (0x00007f47c2cfd000)
+        libgcc_s.so.1 => /lib64/libgcc_s.so.1 (0x00007f47c2ae6000)
+        libc.so.6 => /lib64/libc.so.6 (0x00007f47c2725000)
+        /lib64/ld-linux-x86-64.so.2 (0x00007f47c354e000)
+
+antlr3c使用静态库时：
+[root@Master uspp]# ldd ./build/test/ft_lb/lb_test 
+        linux-vdso.so.1 =>  (0x00007ffe394f1000)
+        libpthread.so.0 => /lib64/libpthread.so.0 (0x00007fe7a26f2000)
+        libstdc++.so.6 => /lib64/libstdc++.so.6 (0x00007fe7a23e9000)
+        libm.so.6 => /lib64/libm.so.6 (0x00007fe7a20e7000)
+        libgcc_s.so.1 => /lib64/libgcc_s.so.1 (0x00007fe7a1ed1000)
+        libc.so.6 => /lib64/libc.so.6 (0x00007fe7a1b0f000)
+        /lib64/ld-linux-x86-64.so.2 (0x00007fe7a2938000)
+		
+Windows和Linux的加载时链接是由操作系统来完成的，格式在不同的系统下有不同的区别，但是原理还是一样的。
+linux下文件的类型是不依赖于其后缀名的，但一般来讲：
+.o,是目标文件,相当于windows中的.obj文件
+.so 为共享库,是shared object,用于动态连接的,和dll差不多
+.a为静态库,是好多个.o合在一起,用于静态连接
+.la为libtool自动生成的一些共享库，vi编辑查看，主要记录了一些配置信息。
+
+2、nm  //用于列出 中间文件、可执行文件、静态库、动态库等 中的函数和全局变量等。
+eg:
+[root@opencos lib]# nm lib_com_dll.so |grep VOS_
+00000000000d62c0 T VOS_BeenBound
+00000000000db600 T VOS_BeginUnbind
+00000000000db7d0 T VOS_BindToCpu
+0000000000115f90 T VOS_Chmod
+0000000000115680 T VOS_Close
+0000000000115760 T VOS_CloseDir
+0000000000114f40 T VOS_CountCRC32
+0000000000117dc0 T VOS_Creat
+0000000000115d70 T VOS_CreateDir

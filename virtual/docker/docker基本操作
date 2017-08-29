@@ -1,0 +1,202 @@
+1、多次运行同一个镜像会创建多个容器，以run -d为例，ps可以看到多个container在运行
+
+
+一、docker run
+https://docs.docker.com/engine/userguide/dockerizing/
+1、$ docker run ubuntu:14.04 /bin/echo 'Hello world'
+   Hello world
+2、$ docker run -t -i ubuntu:14.04 /bin/bash
+   root@af8bae53bdd3:/#
+3、$ docker run -d ubuntu:14.04 /bin/sh -c "while true; do echo hello world; sleep 1; done"
+   1e5535038e285177d5214659a068137486f96ee5c2e85a4ac52dc83f2ebe4147
+   $ docker logs insane_babbage(容器名)
+   hello world
+   . . .
+   $ docker stop insane_babbage
+   insane_babbage
+   
+参数：
+-i The -i flag allows us to make an interactive connection by grabbing the standard in (STDIN) of the container
+-t The -t flag assigns a pseudo-tty or terminal inside our new container
+-d The -d flag tells Docker to run the container and put it in the background, to daemonize it
+-P The -P flag is new and tells Docker to map any required network ports inside our container to our host
+-e 设置环境变量。允许指定即将执行的process任意可用的环境变量。
+--rm 容器退出时时删除容器（如果你仅仅想在一个容器中快速的运行一个命令，然后退出）
+  docker kill $(docker ps -q);//停止所有容器  docker rm $(docker ps -a -q) //删除所有容器
+
+docker rm $(docker ps -a |awk '!/Up/{print $1}')  删除那些退出但没删除的容器
+docker rmi $(docker images|awk '/\<none\>/{print $3}') 删除名字为none的镜像
+
+二、其他
+1、docker commit扩展镜像
+<1>docker run之后，进入容器，进行相关操作(如安装某程序)
+<2>exit退出容器后，执行commit
+docker commit -m(指定提交的信息，和git类似)
+              -a(指定更新的用户信息)
+docker commit -m="install **" -a="***" 原容器ID 目标镜像名称
+
+http://cache.baiducontent.com/c?m=9d78d513d9951cfe01bad4690d678c395b09c0252890904b708ed50ed1735a325a7bb3e57a770704a4943d315db8492bb6a7706f6a4177ebda8fc81dc0e8d26e74d979636d4ad107418847eed64021c6279b58ecac&p=c6769a47919704b108e2977e09438a&newp=87578d5686cc42af5cb7c7710f50c9231610db2151d4d6116b82c825d7331b001c3bbfb423231606d8ce7f650aa94c56ebf537773d0425a3dda5c91d9fb4c57479d2&user=baidu&fm=sc&query=docker+import&qid=ad11df2a00014fbe&p1=1
+2、docker save 
+save用于持久化镜像(而不是容器)
+docker save <image id> > /home/save.tar
+
+docker load < /home/save.tar
+
+3、docker export
+export用于持久化容器(而不是镜像)。导出容器快照到本地
+docker export <container id> > /home/export.tar
+
+docker import  //从容器快照文件中再导入镜像
+
+4、save结果比export稍大一些
+docker images --tree //显示镜像的所有层
+发现，export的镜像会丢失所有的历史 
+      save的镜像没有丢失历史和层
+
+二、容器管理
+https://docs.docker.com/engine/userguide/usingdocker/
+1、docker client就是docker命令行
+2、$ docker run -d -P training/webapp python app.py
+   或者
+   $ docker run -d -p 80:5000 training/webapp python app.py //外部端口80，容器内部端口5000（默认值）
+   http://192.168.31.130:32768/
+   hello world
+3、$ docker port nostalgic_morse 5000
+   0.0.0.0:49155
+4、$ docker logs -f nostalgic_morse
+	* Running on http://0.0.0.0:5000/
+	10.0.2.2 - - [23/May/2014 20:16:31] "GET / HTTP/1.1" 200 -
+	10.0.2.2 - - [23/May/2014 20:16:31] "GET /favicon.ico HTTP/1.1" 404 -
+5、$ docker top nostalgic_morse
+PID                 USER                COMMAND
+854                 root                python app.py
+6、$ docker inspect nostalgic_morse
+7、$ docker stop nostalgic_morse
+nostalgic_morse
+8、重新启动web容器
+$ docker start nostalgic_morse
+nostalgic_morse
+9、移除web容器
+$ docker stop nostalgic_morse
+nostalgic_morse
+$ docker rm nostalgic_morse
+nostalgic_morse
+
+docker ps//列出当前正在运行的容器
+
+三、镜像操作
+https://docs.docker.com/engine/userguide/dockerimages/
+1、镜像分为：根/基础镜像 和 用户镜像   用户镜像一般会有前缀：如training/sinatra中的training
+2、创建镜像的两种方法：
+    You can update a container created from an image and commit the results to an image.
+    You can use a Dockerfile to specify instructions to create an image.
+3、$ docker build -t ouruser/sinatra:v2 .
+-t The -t flag to identify our new image as belonging to the user ouruser, the repository name sinatra and given it the tag v2.
+You’ve also specified the location of our Dockerfile using the . to indicate a Dockerfile in the current directory.
+4、$ docker tag 5db5f8471261 ouruser/sinatra:devel
+The docker tag command takes the ID of the image, here 5db5f8471261, and our user name, the repository name and the new tag.
+5、$ docker images --digests | head  //镜像摘要
+   $ docker pull ouruser/sinatra@cbbf2f9a99b47fc460d422812b6a5adff7dfee951d8fa2e4a98caa0382cfbdbf
+6、$ docker push ouruser/sinatra
+7、移除镜像
+$ docker rmi training/sinatra
+Untagged: training/sinatra:latest
+Deleted: 5bc342fa0b91cabf65246837015197eecfa24b2213ed6a51a8974ae250fedd8d
+Deleted: ed0fffdcdae5eb2c3a55549857a8be7fc8bc4241fb19ad714364cbfd7a56b22f
+Deleted: 5c58979d73ae448df5af1d8142436d81116187a7633082650549c52c3a2418f0
+
+四、网络操作
+https://docs.docker.com/engine/userguide/networkingcontainers/
+1、命名容器container
+<1>使用--name标记 $ docker run -d -P --name web training/webapp python app.py
+<2>docker inspect 中修改
+2、docker网络支持
+两种network drivers：the bridge   支持单个主机
+                     the overlay driver  支持多个主机
+$ docker network create -d bridge my-bridge-network
+-d 新的network使用bridge driver，后面可以加上bridge也可以不加，默认就是bridge
+3、使用不同network的容器之间的网络是隔离的，可以使用docker network connect my-bridge-network web来连接
+这里是将web容器连接到my-bridge-network network，一个容器可以连接到多个network
+
+五、管理容器内部数据
+https://docs.docker.com/engine/userguide/dockervolumes/
+1、数据卷 data volumes 数据卷是容器中的特殊目录
+2、添加数据卷
+docker create/run -v //可以多次使用-v来挂载多个数据卷
+$ docker run -d -P --name web -v /webapp training/webapp python app.py //create a new volume inside a container at /webapp
+$ docker inspect web
+...
+Mounts": [
+    {
+        "Name": "fac362...80535",
+        "Source": "/var/lib/docker/volumes/fac362...80535/_data",
+        "Destination": "/webapp",
+        "Driver": "local",
+        "Mode": "",
+        "RW": true
+    }
+]
+...
+其中：Source表示卷在主机上的路径  Destination卷在容器中的路径  RW卷是否有读写权限
+3、挂载一个主机目录作为数据卷（经测试，1.8.2版本有问题，容器不能运行）
+$ docker run -d -P --name web -v /src/webapp:/opt/webapp training/webapp python app.py
+主机目录/src/webapp   容器路径/opt/webapp
+Docker volumes 默认是读写模式，也可以指定为只读模式
+$ docker run -d -P --name web -v /src/webapp:/opt/webapp:ro training/webapp python app.py
+4、卷标签 z共享 Z私有
+SELinux标签系统
+5、挂载一个主机文件作为数据卷
+
+六、启动执行命令
+1、Dockerfile
+<1>CMD和ENTRYPOINT是在启动容器时执行的命令，都只能写一条；如果写多条，则最后一条生效。
+	
+<2>CMD 指令提供容器运行时的默认值，这些默认值可以是一条指令，也可以是一些参数。
+1)CMD有3种格式：
+CMD <command> (shell格式)
+CMD ["executable", "param1", "param2"] (exec格式，推荐)
+CMD ["param1", "param2"] (为ENTRYPOINT指令提供参数)
+	
+2)用户在执行docker run命令时，如果指定了命令参数，则会覆盖CMD指令中的命令。
+
+<3>ENTRYPOINT 与CMD类似，都可以让容器在启动时执行命令。
+1)ENTRYPOINT有两种格式：
+ENTRYPOINT <command> (shell格式)
+ENTRYPOINT ["executable", "param1", "param2"] (exec格式，推荐)
+
+2)exec格式时，docker run命令传入的参数会覆盖CMD指令的内容并且附加到ENTRYPOINT指令的参数中。
+
+3)ENTRYPOINT会被docker run携带的--entrypoint="..."参数覆盖。
+
+2、docker run [OPTIONS] IMAGE[:TAG] [COMMAND] [ARG...]
+
+
+七、/var/lib/docker/devicemapper/devicemapper/
+1、
+[root@opencos devicemapper]# ll -h
+total 9.1G
+-rw-------. 1 root root 100G Dec 12 10:35 data
+-rw-------. 1 root root 2.0G Dec 12 10:35 metadata
+
+[root@opencos devicemapper]# du -h data 
+9.1G    data
+[root@opencos devicemapper]# du -h metadata 
+9.8M    metadata
+
+可见data的100G并非真实占用，只用了9.1G。
+
+<1>Device mapper driver会创建一个100G的简单文件包含你的镜像和容器。每一个容器被限制在10G大小的卷内。
+那么看来这个100G的简单文件正是这个名为data的文件。
+
+<2>虚机中的镜像和容器中的文件系统会保存在data文件中。
+
+
+
+
+
+
+
+
+
+
+

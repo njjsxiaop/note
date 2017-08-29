@@ -1,0 +1,40 @@
+1、ROA
+ROA即Resource Oriented Architecture，RESTful 架构风格的服务是围绕资源展开的，是典型的ROA架构（虽然“A”和“架构”存在重复，但说无妨），
+虽然ROA与SOA并不冲突，甚至把ROA看做SOA的一种也未尝不可，但由于RPC也是SOA，比较久远一点点论文、博客或图书也常把SOA与RPC混在一起讨论，
+因此，RESTful 架构风格的服务通常被称之为ROA架构，很少提及SOA架构，以便更加显式的与RPC区分。
+
+RPC风格曾是Web Service的主流，最初是基于XML-RPC协议（一个远程过程调用（remote procedure call，RPC)的分布式计算协议），
+后来渐渐被SOAP协议（简单对象访问协议（Simple Object Access Protocol））取代；
+RPC风格的服务，不仅可以用HTTP，还可以用TCP或其他通信协议。
+但RPC风格的服务，受开发服务采用语言的束缚比较大，如.NET框架中，开发web service的传统方式是使用WCF，基于WCF开发的服务即RPC风格的服务，
+使用该服务的客户端通常要用C#来实现，如果使用python或其他语言，很难实现可以直接与服务通信客户端；
+进入移动互联网时代后，RPC风格的服务很难在移动终端使用，而RESTful风格的服务，由于可以直接以json或xml为载体承载数据，以HTTP方法为统一接口完成数据操作，
+客户端的开发不依赖于服务实现的技术，移动终端也可以轻松使用服务，这也加剧了REST取代RPC成为web service的主导。
+
+2、SOAP和HTTP
+http://www.cnblogs.com/Ilin631/archive/2011/05/25/2056820.html
+
+3、
+URI(Uniform Resource Identifier,URI)统一资源标记符。URI有两种形式，URL和URN。
+
+URL统一资源定位符，是资源标识符中最常见的形式。大部分URL都遵循一种标准格式：
+<1>URL的第一部分称为方案(scheme)，说明了访问资源所使用的协议类型，通常是http协议http://
+<2>URL的第二部分给出了服务器的因特网地址
+<3>其余部分指定了服务器上的某个资源
+几乎所有的URI都是URL。
+
+URN统一资源名，作为特定内容的唯一名称使用的，与目前资源所在地无关。
+
+4、事务
+一个HTTP事务由一条请求命令和一个响应结果组成。这种通信是通过名为HTTP报文的格式化数据块进行的。
+
+<1>方法：
+GET/PUT/DELETE/POST/HEAD
+
+5、报文
+HTTP报文包括以下三个部分：
+<1>起始行
+<2>首部字段：包含零个或多个首部字段，每个首部字段格式为key:value，首部以一个空行结束。
+<3>主体：其实行和首部都是文本形式且都是结构化的，主体则不同，主体可以包含任意二进制数据和文本。
+
+6、同一个服务器上，UDP和TCP可以使用同一个端口。

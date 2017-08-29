@@ -1,0 +1,47 @@
+一、基本介绍
+1、Python内置了字典(dict)，使用键-值(key-value)存储，具有极快的查找速度。
+在其他语言中，字典也称为map。
+<1>由于一个key只能对应一个value，多次对一个key放入value会覆盖前面的value。
+<2>dict内部存放的顺序和key放入的顺序无关。
+<3>作为key的对象是不能变的。
+Python中，字符串、整数等都是不可变的，可以作为key。list是可变的，不能作为key。
+
+2、定义dict：
+d = {'Michael': 95, 'Bob': 75, 'Tracy': 85}
+
+>>> a = dict(name="xiaoming",age=12)
+>>> a
+{'name': 'xiaoming', 'age': 12}
+
+增加数据
+d['Adam'] = 67
+
+3、查询时，如果key不存在，dict会报错。
+>>> d['Thomas']
+Traceback (most recent call last):
+  File "<stdin>", line 1, in <module>
+KeyError: 'Thomas'
+
+<1>通过in判断key是否存在
+>>> 'Thomas' in d
+False
+
+<2>通过dict的get()方法，如果key不存在，可以返回None，或者自己指定的value：
+>>> d.get('Thomas') //返回None的时候Python的交互式命令行不显示结果。
+>>> d.get('Thomas', -1)
+-1
+
+4、和list比较
+<1>dict查找和插入的速度极快，不会随着key的增加而变慢；
+<2>dict需要占用更多的内存，内存浪费多。dict用空间换取时间。
+
+
+
+
+
+
+
+
+
+
+

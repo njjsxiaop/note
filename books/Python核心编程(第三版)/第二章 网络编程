@@ -1,0 +1,36 @@
+2.3 套接字：通信端点
+一、套接字
+1、两种类型的套接字：基于文件的和面向网络的。
+<1>基于文件的(两个进程运行在同一台计算机上)：AF_UNIX\AF_LOCAL （AF：address family）
+<2>基于网络的：AF_INET、AF_INET6
+
+2、特殊类型的Linux套接字
+<1>套接字的AF_NETLINK家族(无连接)允许使用标准的BSD套接字接口进行用户级别和内核级别代码之间的IPC。
+<2>AF_TIPC家族：透明的进程间通信(TIPC)协议，允许计算机集群之中的机器相互通信，无须使用基于IP的寻址方式。
+
+3、Python只支持AF_UNIX、AF_NETLINK、AF_TIPC、AF_INET。
+
+二、套接字地址：主机-端口对
+
+三、面向连接的套接字与无连接的套接字
+1、创建TCP套接字，必须使用SOCK_STREAM作为套接字类型。
+
+2、创建UDP套接字，必须使用SOCK_DGRAM作为套接字类型。(datagram数据报)
+
+2.4 Python中的网络编程
+一、socket()模块函数
+socket(socket_family, socket_type, protocol=0)
+
+二、套接字对象(内置)方法
+
+三、创建TCP服务器
+http://blog.csdn.net/chuanchuan608/article/details/17915959  //例子有误
+
+四、创建UDP服务器
+
+2.5 SocketServer模块
+
+2.6 Twisted框架介绍
+
+
+

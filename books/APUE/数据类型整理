@@ -1,0 +1,2 @@
+1、64位机器下，size_t 为 unsigned long; ssize_t 为 long。
+strlen()返回size_t。

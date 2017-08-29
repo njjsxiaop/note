@@ -1,0 +1,243 @@
+一、高阶函数(Higher-order function)
+1、变量可以指向函数
+>>> f = abs
+>>> f
+<built-in function abs>
+>>> f(-10)
+10
+
+函数本身可以赋值给变量，即变量可以指向函数。
+
+2、函数名也是变量
+函数名就是指向函数的变量。
+>>> abs=10
+>>> abs(-10)
+Traceback (most recent call last):
+  File "<stdin>", line 1, in <module>
+TypeError: 'int' object is not callable
+
+abs就是这样一个变量，它指向一个可以计算绝对值的函数。把abs指向10就无法通过abs调用该函数了。
+重启Python交互环境可以恢复abs。
+
+注：由于abs函数实际上是定义在import builtins模块中，要让修改abs变量的指向在其他模块也生效，
+需要在其他模块中: 
+import builtins
+builtins.abs = 10
+
+3、传入函数
+一个函数接收另一个函数作为参数，这种函数就称为高阶函数。函数式编程(Functional Programming)就是这种高度抽象的编程范式。
+def add(x,y,f):
+	return f(x) + f(y)
+
+二、map/reduce
+python内建了map()和reduce()函数。
+
+1、map()
+接收两个参数，一个是函数，一个是Iterable(可迭代对象)。map将传入的函数依次作用到序列的每个元素，并把结果作为新的Iterator(迭代器)返回。
+
+>>> def f(x):
+...     return x * x
+... 
+>>> r = map(f,range(10))
+>>> r
+<map object at 0x7f369235aeb8>
+>>> next(r)
+0
+>>> list(r) //去0之后的序列
+[1, 4, 9, 16, 25, 36, 49, 64, 81]
+
+//由于结果r是一个Iterator，Iterator是惰性序列，因此可以通过list()函数让它把整个序列都计算出来，并返回一个list。
+
+r = map(f,range(10)) 等价于
+L = []
+for n in [1, 2, 3, 4, 5, 6, 7, 8, 9]:
+    L.append(f(n))
+print(L)
+
+2、reduce()
+reduce把一个函数作用在一个序列上。
+这个函数必须接收两个参数，reduce把结果继续和序列的下一个元素做累积计算。其效果就是：
+reduce(f, [x1, x2, x3, x4]) = f(f(f(x1, x2), x3), x4)
+
+<1>求和
+>>> def add(x,y):
+...     return x+y
+... 
+>>> reduce(add,range(10))      
+45
+>>> reduce(add,list(range(10)))
+45
+
+<2>[1,3,5,7,9]变为13579
+>>> from functools import reduce
+>>> def f(x,y):
+...     return x*10+y
+... 
+>>> reduce(f,[1,3,5,7,9])
+13579
+
+<3>str2int
+def str2int(s):
+    def fn(x,y):
+        return x*10+y
+
+    def char2num(c):
+        return {'1':1,'2':2,'3':3,'4':4,'5':5,'6':6,'7':7,'8':8,'9':9,'0':0}[c]
+
+    return reduce(fn,map(char2num,s))
+
+>>> from mapreduce_1 import str2int
+>>> str2int('1234567890')
+1234567890
+
+也就是说，假设Python没有提供int()函数，你完全可以自己写一个把字符串转化为整数的函数。	
+
+
+三、filter
+
+
+
+
+
+
+
+四、匿名函数(lambda)
+当我们传入参数时，有时候不需要显示地定义函数，直接传入匿名函数更加方便。
+1、以map()为例，计算f(x) = x^2。
+>>> list(map(lambda x:x*x, [1,2,3,4,5]))
+[1, 4, 9, 16, 25]
+
+<1>匿名函数 lambda x:x*x,实际上就等于
+def f(x):
+	return x*x
+	
+关键字lambda表示匿名函数，冒号前面的x表示函数参数。
+
+<2>匿名函数只能有一个表达式，不能写return，返回值就是该表达式的结果。
+
+<3>可以把匿名函数赋值给一个变量，再利用变量来调用该函数。
+>>> f = lambda x: x * x
+>>> f
+<function <lambda> at 0x101c6ef28>
+>>> f(5)
+25
+
+五、装饰器(Decorator)
+1、函数对象有__name__属性，可以通过该属性得到函数名。
+>>> def now():
+...     print('2015-3-25')
+>>> now.__name__
+'now'
+
+2、如果要加强now()函数的功能，但又不希望修改函数的定义，这种在代码运行期间动态增加功能的方式称为"装饰器"(Decorator)。
+本质上，decorator就是一个返回函数的高阶函数。(接收函数作为参数，并返回函数)
+
+def log(func):
+    def wrapper(*args, **kw):
+        print('call %s():' % func.__name__)
+        return func(*args, **kw)
+    return wrapper
+
+@log
+def now():
+    print('2015-03-25')
+	
+借助@语法，将decorator置于函数定义处。
+调用now()，不仅会运行now本身，还会在now函数前打印日志：
+>>> now()
+call now():
+2015-3-25
+
+注：把@log放到now()函数的定义出，相当于执行了 now = log(now)。
+	wrapper()函数的参数定义是(*agrs,**kw)，因此，wrapper()函数可以接收任意参数的调用。
+
+3、如果decorator本身需要传入参数，就需要编写一个返回decorator的高阶函数。
+def log(text):
+    def decorator(func):
+        def wrapper(*args, **kw):
+            print('%s %s():' % (text, func.__name__))
+            return func(*args, **kw)
+        return wrapper
+    return decorator	
+
+@log('execute')
+def now():
+    print('2015-3-25')
+	
+执行结果：
+>>> now()
+execute now():
+2015-3-25
+
+和两层嵌套的decorator相比，3层嵌套等价于：
+now = log('execute')(now) //首先执行log('execute')，再调用返回的decorator参数是now。最终返回wrapper函数。
+
+4、上述两种使用方式，导致decorator装饰后的函数，它们的属性：
+>>> now.__name__
+'wrapper'
+
+这是因为wrapper()函数名就是wrapper，所以还需要把原始函数的__name__属性复制到wrapper函数中。否则，有些依赖函数签名的代码执行就会报错。
+可以使用Python内置的functools.wraps实现。在定义wrapper()的前面加上@functools.wraps(func)即可。
+import functools
+def log(func):
+    @functools.wraps(func)
+    def wrapper(*args, **kw):
+        print('call %s():' % func.__name__)
+        return func(*args, **kw)
+    return wrapper
+
+六、偏函数(Partial function)
+1、functools.partial的作用是，把一个函数的某些参数固定住(也就是设置默认值)，返回一个新的函数。
+<1>int()函数可以把字符串转换为整数，默认按十进制转换。
+>>> int('12345')
+12345
+
+<2>int()函数还通过额外的base参数，如果传入base就可以做N进制转换。
+>>> int('12345', base=8)
+5349
+>>> int('12345', 16)
+74565
+
+<3>偏函数实现int2函数
+>>> import functools
+>>> int2 = functools.partial(int, base=2)
+>>> int2('1000000')
+64
+>>> int2('1010101')
+85
+
+注意到int2函数，仅仅是把base参数重新设定默认值为2，但也可以在函数调用时传入其他值：
+>>> int2('1000000', base=10)
+1000000
+
+2、创建偏函数，实际上可以接收函数对象、*args、**kw三个参数。
+<1>int2('1000000', base=10) 相当于
+kw = {'base':2}
+int('1000000',**kw)
+
+<2>max2 = functools.partial(max,10)
+实际上会把10作为*agrs的一部分加到左边，即max2(5,6,7)相当于
+args = (10,5,6,7)
+max(*args)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

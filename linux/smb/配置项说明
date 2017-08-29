@@ -1,0 +1,128 @@
+; 可能需要配置的地方
+# 注释
+
+testparm
+
+1、SELinux
+<1>打开samba_domain_controller允许Samba使用useradd和groupadd族命令
+setsebool -P samba_domain_controller on
+
+<2>打开samba_enable_home_dirs允许通过samba共享home目录
+setsebool -P samba_enable_home_dirs on
+
+<3>要创建一个新的共享目录，比如顶层目录：
+需要给它配置samba_share_t标签，这样SELinux就允许samba读写该目录。
+不要给系统目录(/etc/、/home/等)配置samba_share_t标签，因为这些目录已经有SELinux标签了。
+
+<4>ls -ldZ 目录  //显示当前目录的SELinux标签
+ls -ldZ /etc/
+drwxr-xr-x. root root system_u:object_r:etc_t:s0       /etc/
+
+<5>只为自己创建的目录或文件设置SELinux标签，可以使用chcon命令临时改变标签
+chcon -t samba_share_t 目录
+(chcon用于修改对象的安全上下文)
+
+当系统重启或执行restorecon命令时，临时修改的标签就会失效。
+
+<6>使用samba_export_all_ro或者samba_export_all_rw开关来共享系统目录，
+给这些目录设置只读权限：
+setsebool -P samba_export_all_ro on
+给这些目录提供读写权限：
+setsebool -P samba_export_all_rw on
+
+<7>关于脚本
+将脚本拷贝到 /var/lib/samba/scripts/中，SELinux将会允许smbd运行这些脚本。
+注意，被拷贝的脚本会保持它们的SELinux标签，这些标签可能不允许smbd运行这些脚本；
+因此需要为这些脚本设置正确的SELinux标签，再使用restorecon -R -v /var/lib/samba/scripts命令为这些脚本应用正确的SELinux标签。
+
+2、全局设置
+[global]
+<1>网络相关选项
+workgroup = the Windows NT domain name or workgroup name, for example, MYGROUP.
+server string = the equivalent of the Windows NT Description field.
+netbios name = used to specify a server name that is not tied to the hostname
+interfaces = used to configure Samba to listen on multiple network interfaces.
+hosts allow = the hosts allowed to connect. This option can also be used on a per-share basis
+hosts deny = the hosts not allowed to connect. This option can also be used on a per-share basis.
+max protocol = used to define the supported protocol. The default is NT1. You can set it to SMB2 if you want experimental SMB2 support.
+
+<2>日志选项
+log file = specify where log files are written to and how they are split.
+max log size = specify the maximum size log files are allowed to reach. Log files are rotated when they reach the size specified with "max log size".
+
+<3>独立服务器选项
+
+<4>域成员选项
+
+<5>域控制选项
+
+<6>浏览器控制选项
+
+<7>名称解析
+
+
+http://blog.csdn.net/splenday/article/details/47116969
+http://www.cnblogs.com/lienhua34/archive/2012/03/21/2409133.html
+
+security = user
+说明：设置用户访问Samba Server的验证方式，一共有四种验证方式。
+1. share：用户访问Samba Server不需要提供用户名和口令, 安全性能较低。
+2. user：Samba Server共享目录只能被授权的用户访问,由Samba Server负责检查账号和密码的正确性。账号和密码要在本Samba Server中建立。
+3. server：依靠其他Windows NT/2000或Samba Server来验证用户的账号和密码,是一种代理验证。此种安全模式下,系统管理员可以把所有的Windows用户和口令集中到一个NT系统上,使用Windows NT进行Samba认证, 远程服务器可以自动认证全部用户和口令,如果认证失败,Samba将使用用户级安全模式作为替代的方式。
+4. domain：域安全级别,使用主域控制器(PDC)来完成认证。
+
+guest account = nobody
+说明：用来设置guest用户名。
+
+public = yes/no
+说明：public用来指定该共享是否允许guest账户访问。
+
+guest ok = yes/no
+说明：意义同“public”。
+
+usershare allow guests = yes   //设置匿名访问
+
+include = smbconfFile    //与config file类似
+通过include选项可以包含其他配置文件，通过该选项和一些samba定义的变量可以设定与不同机器相关的配置。
+
+config file = /usr/local/samba/lib/smb.conf.%m
+config file可以让你使用另一个配置文件来覆盖缺省的配置文件。如果文件不存在，则该项无效。这个参数很有用，可以使得samba配置更灵活，可以让一台samba服务器模拟多台不同配置的服务器。
+
+logon path = \%Lprofile\%U
+在服务器上保存Windows用户登录时的配置文件路径，%L为Samba匹配服务器名称
+
+logon drive = H:
+设定登录时主目录的当地路径。
+
+map to guest = Bad User
+匿名、名称、密码都不正确不准登录服务器。即任何非法用户名登录均被视为guest用户。
+
+username map = /etc/samba/smbusers
+用户名的映像。
+
+--------------------------------------------------------------------------------------------------------------------------------------
+
+基本定义
+1、windows使用的是NetBIOS通讯协议，SAMBA主要使用的是NetBIOS over TCP/IP技术。
+2、SAMBA主机的两个daemon(守护进程)
+<1>smbd:管理SAMBA主机分享什么目录、档案、打印机等内容
+<2>nmbd:管理群组、NetBIOS name等的解析
+SAMBA每次启动至少都需要这两个daemons，启动SAMBA后，主机系统会启动137、138、139三个port，且同时有UDP/TCP的监听服务。
+
+联机模式(peer/peer,domain model)
+1、peer/peer(Workgroup model)
+
+2、domain model
+将所有的账号和密码都放置在一部主控计算机(Primary Domain Controller,PDC)上面。
+
+设置
+1、server端设置
+
+
+
+
+
+
+
+
+

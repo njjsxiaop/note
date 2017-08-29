@@ -1,0 +1,6 @@
+1、只允许部分IP ssh登录到服务器上
+<1>在/etc/hosts.allow输入	sshd:10.43.31.116:allow  
+其中10.43.31.116是允许登陆ssh的ip，也可以是一个网段sshd:10.43.31.:allow)  
+
+<2>在/etc/hosts.deny输入	sshd:ALL
+表示除了上面允许的ip，其余的ip都拒绝ssh登录。

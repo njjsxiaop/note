@@ -1,0 +1,76 @@
+0、INT(len)与VARCHAR(len)的区别
+<1>对于INT，这里的len只是表示显示宽度。(可以配合zerofill使用，不足长度时数字前面填充0)
+<2>对于VARCHAR，这里的len表示允许输入的最大宽度。如果超出，插入记录失败。
+eg：
+mysql> desc mytest1;
++-------+-------------+------+-----+---------+-------+
+| Field | Type        | Null | Key | Default | Extra |
++-------+-------------+------+-----+---------+-------+
+| id    | int(11)     | YES  |     | NULL    |       |
+| name  | varchar(10) | YES  |     | NULL    |       |
+| age   | int(11)     | YES  |     | NULL    |       |
+| class | varchar(3)  | YES  |     | NULL    |       |
+| grade | int(2)      | YES  |     | NULL    |       |
++-------+-------------+------+-----+---------+-------+
+
+mysql> INSERT INTO mytest1 VALUES(2,"Lin Tao",10,"1",100);//grade超出2，仍可以正常插入                             
+Query OK, 1 row affected (0.08 sec)
+
+mysql> INSERT INTO mytest1 VALUES(2,"Lin Tao",10,"1000",1);//class超出3，插入失败！
+ERROR 1406 (22001): Data too long for column 'class' at row 1
+
+1、unsigned
+CREATE TABLE tablename(id INT UNSIGNED)；
+ALTER TABLE tablename MODIFY id INT UNSIGNED;
+
+mysql> desc mytest1;
++-------+------------------+------+-----+---------+-------+
+| Field | Type             | Null | Key | Default | Extra |
++-------+------------------+------+-----+---------+-------+
+| id    | int(10) unsigned | YES  |     | NULL    |       |
++-------+------------------+------+-----+---------+-------+
+1 row in set (0.00 sec)
+
+---------------------------------------------------------------------------------
+补充说明：
+1、也可以使用ZEROFILL来设置字段unsigned：
+CREATE TABLE tablename(id INT ZEROFILL); 
+ALTER TABLE tablename MODIFY id INT ZEROFILL;
+
+2、针对int：
+<1>int类型占4个字节32位，默认是有符号的。无符号范围为0-4,294,967,295，有符号范围为-2147483648-2147483647。
+<2>修改为usigned：alter table tablename modify 字段名 int zerofill
+<3>int(40);只是表示显示40宽度（不足前面加0），与实际数据库存储该字段所用的空间无关。
+通常如果不像int(4)这样显示设置，int为int(11)，无符号int为int(10)
+PolicyId               | int(10) unsigned zerofill | YES  | MUL | NULL    |       |
+UserGrade              | int(11)                   | YES  |     | NULL    |       |
+----------------------------------------------------------------------------------
+
+2、zerofill
+<1>ZEROFILL属性的作用：如果宽度小于设定的宽度,则自动填充0。
+需要注意的是，例如：0001只是最后显示的结果，在MySQL中实际存储的还是1。ZEROFILL属性的一种格式化输出。
+<2>如果没有ZEROFILL这个属性，int(10)中的(10)是毫无意义的。
+
+<3>eg：
+mysql> CREATE TABLE mytest(id INT(4) UNSIGNED ZEROFILL NOT NULL);
+Query OK, 0 rows affected (0.10 sec)
+
+mysql> DESC mytest;
++-------+--------------------------+------+-----+---------+-------+
+| Field | Type                     | Null | Key | Default | Extra |
++-------+--------------------------+------+-----+---------+-------+
+| id    | int(4) unsigned zerofill | NO   |     | NULL    |       |
++-------+--------------------------+------+-----+---------+-------+
+1 row in set (0.00 sec)
+
+mysql> INSERT INTO mytest SELECT 1;
+Query OK, 1 row affected (0.03 sec)
+Records: 1  Duplicates: 0  Warnings: 0
+
+mysql> SELECT * FROM mytest;
++------+
+| id   |
++------+
+| 0001 |
++------+
+1 row in set (0.00 sec)

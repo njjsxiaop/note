@@ -1,0 +1,544 @@
+安装：
+http://blog.csdn.net/superchanon/article/details/8546254/     //两种安装总结
+http://www.cnblogs.com/xxoome/p/5864912.html				  //通用安装总结的很好，可能出现的问题总结的很好
+
+注意点：
+0、RPM安装需要  https://dev.mysql.com/downloads/mysql/
+mysql-community-server-5.7.18-1.el7.x86_64.rpm		//RPM Package, MySQL Server
+mysql-community-client-5.7.18-1.el7.x86_64.rpm		//RPM Package, Client Utilities
+mysql-community-common-5.7.18-1.el7.x86_64.rpm		//RPM Package, MySQL Configuration
+mysql-community-libs-compat-5.7.18-1.el7.x86_64.rpm	//RPM Package, Compatibility Libraries
+
+RPM安装可能需要
+mysql-community-libs-5.7.18-1.el7.x86_64.rpm		//RPM Package, Shared Libraries
+mysql-community-devel-5.7.18-1.el7.x86_64.rpm		//RPM Package, Development Libraries
+mysql-connector-python-2.1.6-1.el7.x86_64.rpm		//RPM Package, Python
+
+
+通用安装需要
+mysql-5.7.18-linux-glibc2.5-x86_64.tar.gz
+
+1、centos需要先卸载mariadb才能安装mysql
+http://blog.csdn.net/xizaihui/article/details/53041603
+
+2、安装之后mysql起不来，查看/var/log/mysqld.log，发现：
+[ERROR] InnoDB: The innodb_system data file 'ibdata1' must be writable
+可知需要设置权限： chmod -R 777 /var/lib/mysql
+
+3、rpm方式安装的路径：
+/usr/bin				Client programs and scripts
+/usr/sbin				The mysqld server
+/var/lib/mysql			Log files, databases
+/usr/share/info			Manual in Info format
+/usr/share/man			Unix manual pages
+/usr/include/mysql		Include (header) files
+/usr/lib/mysql			Libraries
+/usr/share/mysql		Miscellaneous support files, 
+						including error messages, character set files, sample configuration files, SQL for database installation
+/usr/share/sql-bench	Benchmarks
+
+4、mysql第一次登陆
+<1>使用随机密码
+随机密码在当前用户根目录下的文件.mysql_secret中，登陆后，通过SET PASSWORD = PASSWORD('new password');修改密码。
+//但是我使用该文件中的密码依旧登陆失败。
+
+<2>修改配置文件/etc/my.cnf   http://www.linuxidc.com/Linux/2016-10/136522.htm
+1)在mysqld之后添加skip-grant-tables;
+2)重启mysql;	service  mysqld  restart
+3)直接登陆mysql而不需要密码;	mysql -u root  (直接点击回车)
+4)mysql> update mysql.user set authentication_string=password('root123') where user='root';
+5)flush privileges;		刷新MySQL的系统权限相关表
+6)退出mysql，去掉my.cnf中的skip-grant-tables;
+7)重启mysql;
+8)登陆mysql，执行任何命令会报错
+ERROR 1820 (HY000): You must reset your password using ALTER USER statement before executing this statement.
+执行：SET PASSWORD = PASSWORD('root123');
+
+若出现出现：ERROR 1819 (HY000): Your password does not satisfy the current policy requirements
+需要执行两个参数，取消mysql默认的密码强度：
+set global validate_password_policy=0; 
+set global validate_password_mixed_case_count=2;
+之后再执行 SET PASSWORD = PASSWORD('root123');
+
+5、python2.7进入命令行，执行import MySQLdb，报错：
+Traceback (most recent call last):
+  File "<stdin>", line 1, in <module>
+ModuleNotFoundError: No module named 'MySQLdb'
+
+需要安装 MySQL-python.x86_64。
+
+6、安装 MySQL-python.x86_64 报错：
+有缺少的需求 libmysqlclient.so.18()(64bit)
+
+需要安装 mysql-community-libs-compat-5.7.18-1.el7.x86_64.rpm
+
+
+
+-----------------------------------------------------------------------------------
+一、基本命令
+1、DDL(Data Definition Language)语句：
+数据定义语言，定义不同的数据段、数据库、表、列、索引等数据库对象的定义。
+常用语句关键字包括create、drop、alter等。
+
+show databases;          //显示库
+create database dbname;  //建库
+drop database dbname;    //删除库
+user dbname;             //选中库
+
+show tables;             //显示库中的所有数据表
+desc tablename;          //查看表定义
+show create table tablename; //查看创建表的SQL语句    \G 选项使得记录能够按照字段竖着排列
+drop table tablename;    //删除表
+
+select count(*) from tableName;  //查询表记录条目
+SELECT * FROM tablename [WHERE CONDITION];  //查询表中符合条件的记录
+
+SELECT * FROM information_schema.PARTITIONS WHERE table_name='tablename';//查看表的分区
+select count(*) from tableName PARTITION (P01);
+
+show index from policy_big;  //查看索引
+show keys from policy_big;   //查看索引
+
+select count(*) from policy_little where PolicyId="254123614"; //字符串匹配
+select count(distinct(Subscriber)) from policy_little where PolicyId="254123614";  //去重后的个数
+
+select * from tableA where id not in (select id from tableB); //not in
+
+INSERT INTO policy_little SELECT * FROM policy_big PARTITION(p%02d); //insert into
+
+INSERT INTO policy_user (SELECT * FROM policy_little PARTITION(p01) where PolicyId not in (select PolicyId from policy_user) or Subscriber not in (select Subscriber from policy_user));
+
+insert ignore into policy_user SELECT * FROM policy_little PARTITION(p01); //忽略主键或唯一索引重复
+
+delete from policy_user;//删除表中数据
+
+//查询rdb_test库空间占用情况
+SELECT CONCAT(TRUNCATE(SUM(data_length)/1024/1024,2),'MB') AS data_size,
+CONCAT(TRUNCATE(SUM(max_data_length)/1024/1024,2),'MB') AS max_data_size,
+CONCAT(TRUNCATE(SUM(data_free)/1024/1024,2),'MB') AS data_free,
+CONCAT(TRUNCATE(SUM(index_length)/1024/1024,2),'MB') AS index_size
+FROM information_schema.tables WHERE TABLE_SCHEMA = 'rdb_test';
+
+//查询POLICY_4INDX_NOPRIM表空间占用情况
+SELECT CONCAT(TRUNCATE(SUM(data_length)/1024/1024,2),'MB') AS data_size,
+CONCAT(TRUNCATE(SUM(max_data_length)/1024/1024,2),'MB') AS max_data_size,
+CONCAT(TRUNCATE(SUM(data_free)/1024/1024,2),'MB') AS data_free,
+CONCAT(TRUNCATE(SUM(index_length)/1024/1024,2),'MB') AS index_size
+FROM information_schema.tables WHERE TABLE_NAME = 'POLICY_4INDX_NOPRIM';
+
+
+/*创建索引*/
+CREATE INDEX index_name ON table_name (column_list)
+CREATE UNIQUE INDEX index_name ON table_name (column_list)
+
+/*删除索引*/
+DROP INDEX index_name ON talbe_name
+ALTER TABLE table_name DROP INDEX index_name
+ALTER TABLE table_name DROP PRIMARY KEY
+
+
+<1>建表
+CREATE TABLE tablename(column_name_1 column_type_1 constraints,
+column_name_2 column_type_2 constraints, ... column_name_n column_type_n constraints)
+1)因为MySQL的表名是以目录的形式存在于磁盘上，所以表名的字符可以用任何目录名允许的字符。
+2)column_name是列的名字。
+3)column_type是列的数据类型。
+4)constraints是列的约束条件。
+
+<2>修改表
+ALTER TABLE tablename MODIFY [COLUMN] column_definition [FIRST|AFTER col_name]  //修改表类型
+ALTER TABLE tablename ADD [COLUMN] column_definition [FIRST|AFTER col_name]   //增加表字段
+ALTER TABLE tablename DROP [COLUMN] col_name   //删除表字段
+ALTER TABLE tablename CHANGE [COLUMN] old_col_name column_definition [FIRST|AFTER col_name]   //字段改名
+ALTER TABLE tablename RENAME [TO] new_tablename  //表改名
+
+2、DML(Data Manipulation Language)语句：
+数据操纵语句，用于添加、删除、更改和查询数据库记录，并检查数据完整性。
+常用的语句关键词主要包括insert、delete、update、select等。
+INSERT INTO tablename (field1,field2,……fieldn) VALUES(value1,value2,……valuesn);
+UPDATE tablename SET field1=value1，field2=value2，……fieldn=valuen [WHERE CONDITION]
+DELETE FROM tablename [WHERE CONDITION]
+SELECT * FROM tablename [WHERE CONDITION]
+
+/***********************************************查询**************************************************/
+
+1)SELECT * FROM tablename [WHERE CONDITION]
+select * from tablename;  //把所有记录都选出来
+select field1,field2,...,fieldn tablename;  //逗号分割需要查询的字段
+select * from tablename where field1=1;     //列出符合条件的记录 > < >= <= != 多个条件之间使用or and等逻辑运算符
+
+2)distinct //将表中的记录去掉重复后显示出来
+select distinct field1 from tablename; //将字段1不重复的记录显示出来，只显示字段1那列
+
+3)ORDER BY 排序
+SELECT * FROM tablename [WHERE CONDITION] [ORDER BY field1 [DESC|ASC], field2 [DESC|ASC],...,fieldn[DESC|ASC]]
+其中：DESC表示按照字段降序排列，ASC表示升序排列，如果不写关键字默认是升序排列。
+ORDER BY后面可以跟多个不同的排序字段，并且每个字段可以有不同的排列顺序。（若第一个字段相同，再按第二个字段排序。）
+
+eg：select * from tablename order by field1，field2 desc;
+注：GROUP BY强加了ORDER BY，如果要避免需要显示使用ORDER BY NULL。
+
+4)LIMIT
+对于排序后的记录，如果只希望显示一部分，可以用LIMIT关键字。
+SELECT ... [LIMIT offset_start,row_count] //offset_start表示记录的起始偏移量(默认为0)，row_count表示显示的行数
+
+eg: select * from tablename order by field1 limit 3; //显示前3条记录
+    select * from tablename order by field1 limit 1,3; //从第2条开始，显示3条记录
+
+5)聚合
+SELECT [field1,field2,...,fieldn] fun_name   //fun_name表示要做的聚合操作，也就是聚合函数，如: sum、count(*)、max、min
+FROM tablename 
+[WHERE where_condition] 
+[GROUP BY field1,field2,...,fieldn]  //GROUP BY关键字表示要进行分类聚合的字段，比如要按照部门分类统计员工数量，部门就应该写在group by后面
+[WITH ROLLUP]   //可选，表明是否对分类聚合后的结果进行再汇总。
+[HAVING where_condition]  //表明对分类后的结果再进行条件过滤。
+
+3、GROUP BY接多个字段
+表示要对这些字段进行分类聚合。
+
+mysql> SELECT* FROM mytest1;                                         
++------+-------+------+-------+
+| id   | name  | age  | class |
++------+-------+------+-------+
+|    1 | Lin   |   10 |     1 |
+|    2 | Jim   |   11 |     1 |
+|    3 | Zhang |   11 |     2 |
+|    4 | Wang  |   10 |     2 |
+|    5 | Xu    |   11 |     1 |
+|    6 | Xu    |   10 |     1 |
++------+-------+------+-------+
+
+<1>先age，再class
+mysql> SELECT age,class,count(1) FROM mytest1 GROUP BY age,class;
++------+-------+----------+
+| age  | class | count(1) |
++------+-------+----------+
+|   10 |     1 |        2 |
+|   10 |     2 |        1 |
+|   11 |     1 |        2 |
+|   11 |     2 |        1 |
++------+-------+----------+
+4 rows in set (0.00 sec)
+
+<2>先class，再age
+mysql> SELECT age,class,count(1) FROM mytest1 GROUP BY class,age;
++------+-------+----------+
+| age  | class | count(1) |
++------+-------+----------+
+|   10 |     1 |        2 |
+|   11 |     1 |        2 |
+|   10 |     2 |        1 |
+|   11 |     2 |        1 |
++------+-------+----------+
+4 rows in set (0.00 sec)
+
+可见：只会对每个字段都相同的条目进行聚合。
+
+----------------------------------------------------------------------------------
+补充：
+GROUP BY 关键字 :表示要进行分类聚合的字段。
+WITH ROLLUP 	:表示对分类聚合后的结果进行再汇总。
+<1>select count(1) from emp;	//统计表中数据条目
+<2>select deptno,count(1) from emp group by deptno;		//统计表中每个deptno值对应的条目
+<3>select deptno,count(1) from emp group by deptno with rollup;		//统计表中每个deptno值对应的条目，并且统计表中数据条目
+----------------------------------------------------------------------------------
+
+4、表连接
+当需要同时显示多个表中的字段时，就可以用表连接来实现这样的功能。
+
+<1>表连接分为内连接和外连接：
+1)内连接仅仅选出两张表中互相匹配的记录;
+2)外连接还会选出其他不匹配的记录。
+
+<2>外连接又分为左连接和右连接：
+1)左连接：包含所有的左边表中的记录，甚至是右边表中没有和它匹配的记录；
+2)右连接：包含所有的右边表中的记录，甚至是左边表中没有和它匹配的记录。
+
+<3>举例：
+1)内连接
+mysql> select * from emp;
++--------+------------+---------+--------+
+| ename  | hiredate   | sal     | deptno |
++--------+------------+---------+--------+
+| zzx    | 2000-01-01 | 2000.00 | 1      |
+| lisa   | 2003-02-01 | 4000.00 | 2      |
+| bjguan | 2004-04-02 | 5000.00 | 1      |
+| bzshen | 2005-04-01 | 4000.00 | 3      |
++--------+------------+---------+--------+
+
+mysql> select * from dept;
++--------+----------+
+| deptno | deptname |
++--------+----------+
+| 1      | tech     |
+| 2      | sale     |
+| 3      | hr       |
++--------+----------+
+
+//输出
+mysql> select ename,deptname from emp,dept where emp.deptno=dept.deptno;
++--------+----------+
+| ename  | deptname |
++--------+----------+
+| zzx    | tech     |
+| lisa   | sale     |
+| bjguan | tech     |
+| bzshen | hr       |
++--------+----------+
+
+2)左连接
+mysql> select * from emp;
++--------+------------+---------+--------+
+| ename  | hiredate   | sal     | deptno |
++--------+------------+---------+--------+
+| zzx    | 2000-01-01 | 2000.00 | 1      |
+| lisa   | 2003-02-01 | 4000.00 | 2      |
+| bjguan | 2004-04-02 | 5000.00 | 1      |
+| bzshen | 2005-04-01 | 4000.00 | 3      |
+| dony   | 2005-02-05 | 2000.00 | 4      |
++--------+------------+---------+--------+
+
+mysql> select * from dept;
++--------+----------+
+| deptno | deptname |
++--------+----------+
+| 1      | tech     |
+| 2      | sale     |
+| 3      | hr       |
++--------+----------+
+
+//输出
+mysql> select ename,deptname from emp left join dept on emp.deptno=dept.deptno;
++--------+----------+
+| ename  | deptname |
++--------+----------+
+| zzx    | tech     |
+| lisa   | sale     |
+| bjguan | tech     |
+| bzshen | hr       |
+| dony   |          |
++--------+----------+
+
+3)右连接
+可以将上面的左连接语句，改写为如下右连接：
+mysql> select ename,deptname from dept right join emp on dept.deptno=emp.deptno;
+查询结果保持不变。(因为交换了表的顺序，这里的右连接其实就是上面的左连接)
+
+5、子查询
+某些情况下，查询条件是另一个SELECT语句的结果，这时需要用到子查询。
+子查询的关键字主要包括：in、not in、=、!=、exists、not exists等。
+
+<1>in:
+select * from emp where deptno in(select deptno from dept);
+
+<2>如果子查询的记录数唯一，还可以用=替代in：
+mysql> select * from emp where deptno = (select deptno from dept);
+ERROR 1242 (21000): Subquery returns more than 1 row
+mysql> select * from emp where deptno = (select deptno from dept limit 1);
+
+<3>某些情况下，子查询可以转换为表连接：
+select * from emp where deptno in(select deptno from dept);
+转换为：
+select emp.* from emp ,dept where emp.deptno=dept.deptno;
+
+注：表连接在很多情况下用于优化子查询。
+
+6、记录联合
+若要将多个表的数据按照一定的条件查询出来，并显示合并后的结果。此时，就需要用到union和union all。
+
+<1>语法：
+SELECT * FROM t1
+UNION|UNION ALL
+SELECT * FROM t2
+...
+UNION|UNION ALL
+SELECT * FROM tn;
+
+<2>UNION和UNION ALL的主要区别：
+UNION ALL将结果集直接合并在一起；
+UNION将UNION ALL的结果再进行一次DISTINCT，得到去重后的结果。
+
+/*****************************************************************************************************/
+
+二、表的存储引擎
+1、MySQL 5.0支持的存储引擎包括：MyISAM、InnoDB、BDB、MEMORY等。其中InnoDB和BDB提供事务安全表，其他存储引擎都是非事务安全表。
+参数default-table-type设置默认存储引擎。
+
+2、相关命令
+show variables like 'table_type'; //查看当前默认存储引擎
+show engines \G  //查看当前数据库支持的存储引擎
+show variables like 'have%'; //查看当前数据库支持的存储引擎
+
+show variables like '%innodb%';   //查看innodb相关配置参数
+show status like '%innodb%';  //查看innodb相关的运行时参数（比如当前正在打开的表的数量，当前已经打开的表的数量）
+show global status like 'open%tables';  //查看全局的运行时参数，加上global是对当前mysql服务器中运行的所有数据库实例进行统计。
+									不加global则只对当前数据库实例进行统计。
+									
+3、InnoDB的存储方式
+<1>使用共享空间存储
+这种方式创建的表结构保存在.frm文件中，数据和索引保存在innodb_data_home_dir和innodb_data_file_path定义的表空间中。可以是多个文件。
+
+<2>使用多表空间存储
+这种方式创建的表结构保存在.frm文件中，每个表的数据和索引单独保存在.ibd中。
+如果是分区表，每个分区对应单独的.ibd文件，可以在创建时指定每个分区的数据文件位置，以此来将表的IO均匀分布在多个磁盘上。
+
+1)要使用多表空间的存储方式，需要设置参数innodb_file_per_table，重新启动服务后生效。
+之后对于新建的表按照多表空间的方式创建，已有的表仍使用共享表空间存储。
+
+2)多表空间的数据文件没有大小限制，不需要设置初始大小，也不需要设置文件的最大限制、扩展大小等参数。
+
+3)使用多表空间特性的表，可以方便地进行单表备份和恢复操作。
+因为没有共享表空间的数据字典信息，直接复制.ibd和.frm文件恢复时是不能被正确识别的，可以使用以下命令将备份恢复到数据库中，
+ATLER TABLE tbl_name DISCARD TABLESPACE;
+ATLER TABLE tbl_name IMPORT TABLESPACE;
+但是这样的单表备份只能恢复到原来所在的数据库中，而不能恢复到其他的数据库中。
+如果需要恢复到目标数据库，则要通过mysqldump和mysqlimport来实现。
+
+4、相关配置参数
+1、innodb_read_io_threads\innodb_write_io_threads
+在MySQL5.5.X版本中，这两个参数取代了innodb_file_io_threads。分表表示InnoDB使用后台线程处理数据页上读写I/O请求的数量，默认值都是4。
+32个逻辑CPU时可以分别改为16。
+
+2、innodb_thread_concurrency
+InnoDB会试图将InnoDB服务的使用的操作系统进程小于或等于这里所设定的数值。此参数默认值为 8。
+如果你的计算机系统有很多的处理器与磁盘系统，则可以将这个值设高一点以充分利用你的系统资源。建议设值为处理器数目+磁盘数目。
+在当前最新版本的mysql中，innodb_thread_concurrency的默认值为0，它表示默认情况下不限制线程并发执行的数量。 
+
+3、innodb_buffer_pool_size
+InnoDB用来高速缓冲数据和索引内存缓冲大小。更大的设置可以使访问数据时减少磁盘 I/O。这对Innodb表来说非常重要。Innodb相比MyISAM表对缓冲更为敏感。
+在一个专用的数据库服务器上可以将它设置为物理内存的80%。
+不要将它设置太大，因为物理内存的使用竞争可能会影响操作系统的页面调用。在my.cnf中以数字格式设置。
+
+4、innodb_log_file_size   
+日志组中的每个日志文件的大小(单位 MB)。
+如果 n 是日志组中日志文件的数目，那么理想的数值为 1M 至下面设置的缓冲池(buffer pool)大小的 1/n。
+较大的值，可以减少刷新缓冲池的次数，从而减少磁盘 I/O。但是大的日志文件意味着在崩溃时需要更长的时间来恢复数据。 
+日志文件总和必须小于2G，3.23.55和4.0.9以上为小于4G。在my.cnf中以数字格式设置。
+
+5、innodb_flush_log_at_trx_commit
+通常设置为 1，意味着在事务提交前日志已被写入磁盘，事务可以运行更长以及服务崩溃后的修复能力。
+如果你愿意减弱这个安全，或你运行的是比较小的事务处理，可以将它设置为0，以减少写日志文件的磁盘 I/O。这个选项默认设置为0。
+这个参数的含义是事务提交刷写磁盘的模式。为1，每个事务都进行写盘。为0时：log buffer将每秒一次地写入log file中，并且log file的flush(刷到磁盘)操作同时进行。
+
+
+参数	前一次测试	本次测试
+innodb_read_io_threads	4	8
+innodb_write_io_threads	4	16
+thread_concurrency	10	32
+innodb_log_file_size	10000M	600M
+innodb_log_files_in_group	2	3
+innodb_log_buffer_size	8M	16M
+innodb_flush_log_at_trx_commit	0	0
+innodb_buffer_pool_size	20000M	20000M
+
+
+三、一些资料
+1、金海：
+<1>mysql分区表，分区自己维护增加和删除，时间序列是range那种类型。
+http://www.cnblogs.com/mliudong/p/3625522.html
+http://www.2cto.com/database/201503/380348.html
+
+<2>laodfile用法和技巧和性能
+http://blog.csdn.net/qmyzch/article/details/53141911   （设置缓存大小）
+http://blog.jobbole.com/85657/   性能测试
+
+<3>线程和配置
+http://book.2cto.com/201402/40300.html  据说5.1支持4核，5.5支持24核，5.6支持64核，io读写线程很关键。
+http://blog.csdn.net/u010433704/article/details/50524117  配置指南
+
+<4>分析总结：
+增加io线程以后，性能比第一次15万提升了20%，达到18万。
+直觉是索引还有些问题，所以第二次插入同一分区的时候性能下降明显（工程上可以规避插入新的分区即可）。
+我猜测你是用b树默认索引，索引填充因子和树分裂有关，因此出现大量毛刺导致性能下降。注意观察插入时刻的cpu占用率情况。
+尝试大页面的情况下，分区的第二次插入是否有所改善，若是则说明填充因子需要调整。
+我预计最终能每秒能达到25-30万左右。
+基础测试中任何疑点都不能放过，宁可慢，切记切记。
+
+你索引是b树还是哈希的？  可以参见这篇 http://blog.sina.com.cn/s/blog_6776884e0100pko1.html
+http://www.cnblogs.com/olinux/p/5161826.html   如果是整形，可以采用哈希索引。时间如果是字符串，一般只能用b树。如果列1用整形，等价于列二的时间，那么索引只要建一个即可，不需要复合索引。
+这篇关键：
+http://blog.csdn.net/great_tony/article/details/47280963
+InnoDB的主键选择与插入优化
+在使用InnoDB存储引擎时，如果没有特别的需要，请永远使用一个与业务无关的自增字段作为主键。
+经常看到有帖子或博客讨论主键选择问题，有人建议使用业务无关的自增主键，有人觉得没有必要，完全可以使用如学号或身份证号这种唯一字段作为主键。不论支持哪种论点，大多数论据都是业务层面的。如果从数据库索引优化角度看，使用InnoDB引擎而不使用自增主键绝对是一个糟糕的主意。
+上文讨论过InnoDB的索引实现，InnoDB使用聚集索引，数据记录本身被存于主索引（一颗B+Tree）的叶子节点上。这就要求同一个叶子节点内（大小为一个内存页或磁盘页）的各条数据记录按主键顺序存放，因此每当有一条新的记录插入时，MySQL会根据其主键将其插入适当的节点和位置，如果页面达到装载因子（InnoDB默认为15/16），则开辟一个新的页（节点）。
+如果表使用自增主键，那么每次插入新的记录，记录就会顺序添加到当前索引节点的后续位置，当一页写满，就会自动开辟一个新的页。如下图所示：
+
+这篇是innodb关于索引参数的优化：innodb_page_size，MERGE_THRESHOLD，innodb_fill_factor 主要这三个关键字
+http://blog.csdn.net/aeolus_pu/article/details/56833191
+
+
+2、索引
+http://blog.csdn.net/lmh12506/article/details/8879916
+http://blog.csdn.net/xluren/article/details/32746183   
+
+3、分区表操作
+http://blog.csdn.net/orangleliu/article/details/57088338    MySQL对数据表已有表进行分区表
+
+SELECT * FROM information_schema.PARTITIONS WHERE table_name='tablename';//查看表的分区
+select count(*) from tableName PARTITION (P01);
+ALTER TABLE policy_partition ADD PARTITION (PARTITION p08 VALUES LESS THAN (20170702000000)); //新增分区
+alter table policy_partition drop partition p8;  //删除分区
+
+
+
+四、一些问题：
+1、->
+记得语句结尾加;
+
+2、Host '10.43.241.216' is not allowed to connect to this MySQL servertime: 0.001！
+http://blog.csdn.net/dazhi_100/article/details/50553947
+http://www.cnblogs.com/yuejin/archive/2013/11/12/3419467.html   //外网连接mysql
+mysql> GRANT ALL PRIVILEGES ON *.* TO 'root'@'%' IDENTIFIED BY 'db10$ZTE' WITH GRANT OPTION;                
+Query OK, 0 rows affected (0.12 sec)
+
+mysql> flush privileges;
+
+3、LOAD DATA INFILE时报duplicate entry for key错误
+通常是数据中唯一索引冲突导致。
+load csv file error! csv file name=NoticeFile20170401155049.csv. ret=1!
+Duplicate entry '150778720309359-2017-04-03 15:50:51-2541236063' for key 'index_subscriber_time_policy', errno=1062
+
+4、多线程
+<1>MySQL允许多个线程同时导入数据，即多个线程同时insert，不会冲突。要给每个都线程建立连接。
+<2>mysql中有一种机制是表锁定和行锁定，为什么要出现这种机制，是为了保证数据的完整性。
+如果有二个sql都要修改同一张表的同一条数据，这个时候怎么办呢，是不是二个sql都可以同时修改这条数据呢？
+很显然mysql对这种情况的处理是，一种是表锁定（myisam存储引擎），一个是行锁定（innodb存储引擎）。
+表锁定表示你们都不能对这张表进行操作，必须等我对表操作完才行。
+行锁定也一样，别的sql必须等我对这条数据操作完了，才能对这条数据进行操作。
+如果数据太多，一次执行的时间太长，等待的时间就越长，这也是我们为什么要分表的原因。
+
+五、待研究
+http://blog.csdn.net/czw698/article/details/42294171   //亿级别MySQL使用
+
+
+六、mysql配置参数
+1、bind_address
+<1>bind_address后面增加远程访问IP地址或者注释掉，重启Mysql，就可以远程登录数据库了。
+<2>设为0.0.0.0表示所有IP都能访问。
+
+
+七、官网API
+https://dev.mysql.com/doc/refman/5.6/en/mysql-init.html
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

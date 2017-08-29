@@ -1,0 +1,106 @@
+一、系统配置文件
+1、/etc/profile:登陆时的系统级环境和启动项目
+<1>在/etc/profile文件中修改环境变量，在这里修改的内容是对所有用户起作用的;
+<2>修改/home/.bashrc文件，进行环境变量的编辑，只对当前用户有用。
+2、/etc/inittab：不再起作用，centos7之后采用systemd代替init。
+   内核加载完毕进行完硬件检测与驱动程序加载后，内核会主动调用第一个进程/sbin/init（init的PID号码为1）,/sbin/init最主要的功能就是准备软件执行的环境，
+   包括系统的主机名、网络配置、语系处理、文件系统格式及其他服务的启动等。而所有的操作都会通过init配置文件/etc/inittab来规划。
+3、systemd：systemd是一个完整的软件包，安装完成后有很多物理文件组成，
+   大致分布为：配置文件位于/etc/systemd这个目录下，配置工具命令位于/bin，和/sbin这两个目录下，
+   预先准备的备用配置文件位于/lib/systemd目录下，还有库文件和帮助手册等等。
+<1>配置文件：/etc/systemd/system/default.target (替代配置文件/etc/inittab)
+4、login shell会读取的配置文件：（注销或Source命令）
+<1>/etc/profile
+<2>~/.bash_profile (调用~/.bashrc)
+5、non-login shell会读取的配置文件：
+<1>~/.bashrc (调用/etc/bashrc)
+<2>/etc/bashrc
+
+---------------------------------------------------------------------------------------------------------------------------
+2016.03.10补充：
+1、环境设定档： bashrc, ~/.bashrc, ~/.profile, profile...,/etc/inputrc, source
+关于取得 bash 的环境变量等数据，其实可以有系统规划与各人喜好，一般来说，建议使用者直接修改个人设定值即可，不需要更动到系统。
+<1>系统预设档：
+  - /etc/sysconfig/i18n  设定语言（centos 7中已经被/etc/locale.conf取代）
+  - /etc/profile  这个档案设定了几个重要的变量，例如：『PATH、USER、MAIL、HOSTNAME、HISTSIZE、umask』等等，也同时规划出 /etc/inputrc 这个针对键盘热建设定的档案的数据内容。
+                  你可以在这里设定总体的 PATH 等等的信息！同时，这个档案也规划出 /etc/profile.d 及 /etc/inputrc 这两个目录与档案！
+  - /etc/bashrc   这个档案在规划 umask 的功能，也同时规划出提示字符的内容 (就是里头那个 PS1 啦！) 。
+  - /etc/profile.d/*.sh  /etc/profile.d 是一个目录，里面针对 bash 及 C-shell 规范了一些数据。 以 FC4 为例，这个目录里
+                        面就针对了颜色、语系、vim 及 which 等指令进行一些额外的设定， 例如 alias 之类的规范值。我们的
+                        vim 被用 alias 命名为 vi 就是在这个目录下被设定好的。 当然啦，这个目录的由来其实是在
+                        /etc/profile 这个档案内规范的啦！ 你可以自行设定一些 *.sh 的文件名的档案来书写自己的系统设定值喔！
+  - /etc/man.config  
+
+<2>个人设定：
+  - ~/.bash_profile, ~/.bash_login, ~/.profile ：这三个档案通常只要一个就够了，一般预设是以 ~/.bash_profile 的檔名存在。 会有这么多的档案，其实是因应其它 shell 转换过来的使用者的习惯而已。 
+											     这个档案可以定义个人化的路径 (PATH) 与环境变等等。
+												 不过，还是有顺位上的差异，bash 启动时，会先去读取 ~/.bash_profile，找不到时，就去读取 ~/.bash_login ，然后才是 ~/.profile。
+  - ~/.bashrc  建议将自己的需要输入在这个档案里面，例如命令别名、路径等等。 这个档案在您每次执行 shell script 的时候都会被重新使用一遍，所以是最完整的。 
+               而上头的 ~/.bash_profile 则只有在登入的时候会被读取一次。
+  - ~/.bash_history  我们的历史命令就记录在这里，而这个档案能够记录几笔数据，则与 HISTSIZE 这个变数有关啊。每次登入 bash 后，bash 会先读取
+                     这个档案，将所有的历史指令读入内存， 因此，当我们登入 bash 后就可以查知上次使用过哪些指令啰。
+  - ~/.bash_logout  这个档案则记录了『当我注销 bash 后，系统再帮我做完什么动作后才离开』的意思。可以将一
+                    些备份或者是其它你认为重要的工作写在这个档案中（例如清空暂存盘）。
+
+<3>source 或小数点 (.) 都可以将设定档的内容读进来目前的 shell 环境中。
+
+2、在变量的设定规范中，后输入的设定值可以取代先输入的设定值，登入bash时，设定档的读取如下：
+<1>先读取/etc/profile，再根据 /etc/profile 的内容去读取其它额外的设定档，例如/etc/profile.d 与 /etc/inputrc 等等设定档；
+<2>根据不同的使用者，到使用者家目录去读取 ~/.bash_profile 或 ~/.bash_login 或 ~/.profile等设定档；
+<3>根据不同使用者，到他家目录去读取 ~/.bashrc。
+也就是说，在 ~/.bashrc 里面的设定会是最终的设定值！所以将个人的一些常用 alias 或 PATH 等环境变量或自订变量都写到这个档案去，
+如此不论原来系统帮我们做了什么设定值，我都可以使用属于自己熟悉的环境。
+
+3、终端机环境设定：stty, set
+   tty1 ~ tty6 这六个文字接口的终端机 (terminal) 
+   /etc/inputrc
+---------------------------------------------------------------------------------------------------------------------------
+http://www.centoscn.com/CentOS/Intermediate/2015/0129/4594.html
+6、CentOS 7与之前版本的区别
+<1>取消ifconfig，使用ip addr 查看IP地址。　　
+<2>使用firewalld 取代 iptables。
+<3>系统默认编码设置文件，由/etc/sysconfig/i18n  更改为 /etc/locale.conf
+
+systemctl start firewalld.service#启动firewall
+systemctl stop firewalld.service#停止firewall
+systemctl disable firewalld.service#禁止firewall开机启动
+yum install iptables-services#安装iptables-services
+# yum install iptables-services #安装
+# systemctl start iptables.service #最后重启防火墙使配置生效
+# systemctl enable iptables.service #设置防火墙开机启动
+
+二、网络相关
+1、/etc/sysconfig/network   修改主机名称与是否重启（修改此文件可能需要重启生效）；
+2、/etc/sysconfig/network-scrips/ifcfg-ethn   设置网卡参数 network、ip、netmask、broadcast、getway，启动时IP获取方式(DHCP\static)，是否在开机时启动等；
+3、/etc/modules.conf   设置加载内核模块的文件，在内核找不到网卡的芯片组时才会用到；
+4、/etc/resolv.conf    设置DNS的文件
+5、/etc/hosts          记录计算机IP对应的主机名称或者别名。hosts文件的作用相当如DNS，提供IP地址到hostname的对应。
+   Linux系统在向DNS服务器发出域名解析请求之前会查询/etc/hosts文件，如果里面有相应的记录，就会使用hosts里面的记录。
+   hosts文件格式是一行一条记录，分别是IP地址 hostname aliases，三者用空白字符分隔，aliases可选。
+   eg： 192.168.31.130  localregistry.rcp001 //前者是我的主机IP后者是主机名
+6、重启网络服务：service network restart   或者    /etc/init.d/network restart
+   启动关闭网卡：ifup eth0  ifdwon eth0    或者    ifconfig eth0 down
+   
+   /etc/udev/rules.d/70-persistent-ipoib.rules  //
+   
+7、修改主机名
+<1>/proc/sys/kernel/hostname
+   Linux操作系统的hostname是一个kernel变量，可以通过hostname命令来查看本机的hostname。也可以直接cat /proc/sys/kernel/hostname查看。
+hostname命令可以设置系统的hostname (#hostname newname)。
+newname即要设置的新的hostname，运行后立即生效，但是在系统重启后会丢失所做的修改，如果要永久更改系统的hostname，就要修改相关的设置文件。
+<2>  /etc/hostname   NEWNAME 重启
+或者 /etc/sysconfig/network   HOSTNAME=NEWNAME 重启
+<3> /etc/hosts  很过人一提到更改hostname首先就想到修改/etc/hosts文件，认为hostname的配置文件就是/etc/hosts。其实不是的。
+
+8、/etc/sysconfig/iptables-config  //iptables配置文件
+9、<1>/proc/sys/net/ipv4/*   //IPv4 的核心管理功能
+   /proc/sys/net/ipv4/ip_forward  //内核ip转发
+   /proc/sys/net/ipv4/tcp_syncookies  //防止阻断式服务 (DoS) 攻击法当中的一种方式
+   当启动 SYN Cookie 时，主机在发送 SYN/ACK 确认封包前，会要求 Client 端在短时间内回复一个序号，这个序号包含许多原本 SYN 封包内的信息，
+   包括 IP、port 等。若 Client 端可以回复正确的序号， 那么主机就确定该封包为可信的，因此会发送 SYN/ACK 封包，否则就不理会此一封包。
+   /proc/sys/net/ipv4/icmp_echo_ignore_broadcasts  //仅有 ping broadcast 地址时才取消 ping 的回应
+   /proc/sys/net/ipv4/icmp_echo_ignore_all         //全部的 ping 都不回应
+   <2>/proc/sys/net/ipv4/conf/网络接口/*
+   /proc/sys/net/ipv4/conf/eno16777736/rp_filter：逆向路径过滤 (Reverse Path Filtering)可以藉由分析网络接口的路由信息配合封包的来源地址，来分析该封包是否为合理。
+                                      log_martians：这个设定数据可以用来启动记录不合法的 IP 来源
+									  accept_redirects/send_redirects：

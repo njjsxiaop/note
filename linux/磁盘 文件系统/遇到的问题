@@ -1,0 +1,29 @@
+一、挂载分区导致系统起不来，找不到lv_home
+WARNING: GPT (GUID Partition Table) detected on '/dev/sdd'! The util fdisk doesn't support GPT. Use GNU Parted.
+
+http://blog.csdn.net/wengtf/article/details/40398959
+
+https://www.ibm.com/developerworks/cn/linux/l-cn-pclvm-rstr/    //LVM灾难修复
+
+错误解决，如何成功启动
+http://blog.csdn.net/hunanchenxingyu/article/details/9533517
+https://segmentfault.com/a/1190000000749515
+
+---------------------------------------------------------------------------------------
+先umount /dev/vg_rcp/lvm_home
+
+lvremove /dev/vg_rcp/lv_home
+vgreduce --removemissing /dev/vg_rcp   //删除vg_rcp中未知的pv
+lvcreate -l 1024 -n lv_home vg_rcp     //创建lv_home
+mkfs -t ext4 /dev/vg_rcp/lv_home       //新建的lv需要格式化
+
+最后再mount /dev/vg_rcp/lvm_home
+
+二、/bin/目录下bash、sh丢失导致系统启动失败
+http://www.bubuko.com/infodetail-2053034.html   //现象
+http://www.linuxidc.com/Linux/2015-03/114942.htm  //进入救援模式  
+(u盘救援选择hard disk；由于使用了lvm，任意选择一个系统所在的分区，跳过/mnt/sysimage挂载，之后进入shell再手动mount)
+http://blog.csdn.net/windowsxpwyd/article/details/6579686  //救援模式下需要手动挂载lv
+http://tonychiu.blog.51cto.com/656605/769934/
+
+----------------------------------------------------------------------------------------

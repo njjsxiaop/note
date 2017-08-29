@@ -1,0 +1,221 @@
+1、简介
+gdb调试：(GDB, GNU Project debugger)
+<1>可执行文件:gdb APP_P4_V10.exe
+<2>分析core dump信息：gdb lxImage core.428
+<3>正在执行的进程：gdb APP_P4_V10.exe 8481     (8481是进程ID)
+<4>以C/S模式调试可执行程序：
+
+2、基本操作
+<0>位置:  可以是行号，或文件名:行号，或函数名、或 函数名:行号 等
+<1>直接回车表示重复上一步操作
+<2>ctrl-x a 进入/离开 TUI模式
+<3>ctrl-l   刷新窗口（按着ctrl再按l）
+
+控制类操作：
+<1>r -- run，运行程序
+<2>c -- continue，继续运行程序
+<3>n -- next，执行下一条语句
+<4>s -- step，执行下一步，会进入函数
+<5>finish -- 执行到函数返回
+<6>until 位置 -- 执行到指定位置或函数返回
+<7>ctrl-c -- 中断当前程序的执行，回到gdb
+<8>kill -- 终止当前程序的执行
+<9>q -- quit，退出gdb
+
+断点操作：
+<1>b -- break，设置断点   
+     b 位置
+     b 位置 条件  //在指定条件下起作用
+<2>info b --（i b）查看断点信息
+<3>d b 断点号 -- 根据断点编号删除断点 d b 1删除一号断点
+<4>disable 断点号 -- 停止断点
+<5>enable  断点号 -- 启用断点
+
+查看类操作：
+<1>p 变量名 -- print，查看变量信息，变量前面可以加上类型转换符
+<2>display 变量名 -- 观察变量信息，每次程序中断时都会打印此值
+   删除display与删除断点类似： 
+   info display //查看display编号
+   d display display编号
+<3>x /长度 起始地址 -- 查看一段内存的信息 eg：如查看0xb7b71fa 地址起始的10个字节的值: (gdb) x /10 0xb7b71fa2
+<4>l 位置 -- list，查看一段代码信息。查看当前位置直接l
+<5>disassemble 位置 -- 查看指定位置的汇编信息
+<6>display /i $pc -- 查看当前汇编指令
+<7>bt -- （或者where）查看（函数）调用链 可以看到调用链函数的帧号 
+<8>f 帧号 -- 跳转到调用链的指定函数
+<9>info frame -- 查看当前帧的信息
+<10>info locals -- 查看函数中所有局部变量信息
+<11>info args -- 查看函数参数信息
+<12>info registers -- 查看寄存器信息
+<13>info threads -- 查看线程信息 可以看到所有线程的编号
+<14>thread 线程编号 -- 切换到其他线程
+<15>search 关键字 -- 向前（上）查找指定的关键字
+
+3、注意点
+<1>j与c
+b 100	  //假设当前在第10行
+j 100     //跳转到100行，并且不执行10--100行之间的部分
+	
+b 100     //假设当前在第10行
+c         //运行到100行，执行10--100行之间的部分
+
+4、容器内部gdb调试
+<1>scp root@10.43.214.172:/home/usppDeps/gdb .
+<2>docker run -it -v /home/xiaopeng/rcp_paas/rcp:/home/rcp/code --rm --privileged --name uspp_lb image_id
+<3>启动业务进程，然后sh 1进入业务进程执行i()查看业务调度线程的TID， 下图中的SCHE7_1为7号调度，对应的TID为97。
+[admin]# sh 1
+
+[USPP_LB_X86_64_D_V06.16.10]# i()
+
+[USPP_LB_X86_64_D_V06.16.10]
+
+[USPP_LB_X86_64_D_V06.16.10]-------------------start of taskinformation-----------------------------
+[USPP_LB_X86_64_D_V06.16.10]TaskName     TID   threadID    Prio  Stack       StackSize   Status
+
+[USPP_LB_X86_64_D_V06.16.10]SCHE8_1        96  0x00007f2a2026f700    40  0x00007f2a2016f000    1048576  INTERRUPTIBLE    NO   0
+[USPP_LB_X86_64_D_V06.16.10]SCHE7_1        97  0x00007f2a2016d700    40  0x00007f2a20169000      16384  INTERRUPTIBLE    NO   0
+
+<4>在另一个shell窗口中，docker exec -it container_id /bin/bash
+<5>./code/gdb --pid 97  //调度线程标识可以查看main中的第三个参数
+   dir /home/rcp/code
+   b dis_ctrl
+   c
+   
+/************************************************************************/
+容器内调试步骤：
+1、修改db.conf文件，打包lb和fe容器镜像。（若忘记修改conf也可以在各个容器中修改 /data/db.conf）
+2、启动lb容器
+docker run -it -v /home/xiaopeng/USPP/uspp/:/data/uspp --rm --privileged --name uspp_slb uspp/lb:latest 
+
+                  ./PLAT...   sh 1  开启打印
+                               i()  在另一个窗口的home/uspp/_log.txt下查看业务调度线程的TID   
+(LB对应的调度线程标识为7,调度线程标识可以查看main中的第三个参数)
+3、重新打开一个窗口 docker exec -it container_id /bin/bash  进入lb容器
+   利用gdb进行调试 gdb                          //
+                   attach 线程ID                //
+				   dir division/app/lb/source   //设置路径
+				   b fecc_ctrl
+				   c
+/************************************************************************/
+
+5、gdb调试反汇编信息
+<1> 进入 /build/uspp/exe_uspp_lb/，执行 gdb USPP_LB_X86_64_D_V06.16.10,
+<2> disassemble 函数名(slb_scan_ttl_link),显示汇编信息，
+----------------Function Calling Trace Start-----------------
+0x00000000007c0ce8       fmMsgPreProc+(0xfa/0x135)   //表示在fmMsgPreProc函数对应的汇编语言的250行(共有309行汇编语言  250/309）
+
+Current Stack Frame Pointer: 0x00007f6cdc9f1dc0.
+0x00000000007c09d1       fmMain+(0x20/0x23)
+
+Current Stack Frame Pointer: 0x00007f6cdc9f1de0.
+0x00000000007ce279       rcpFMCtrl+(0xbac/0x100b)
+
+Current Stack Frame Pointer: 0x00007f6cdc9f1f90.
+0x00007f6d2be28972       UniL2JobEntry(lib_com_dll.so)+(0x72/0x8a)
+
+Current Stack Frame Pointer: 0x00007f6cdc9f1fd0.
+failed to find name for 0x00007f6d2be6a555
+
+Current Stack Frame Pointer: 0x00007f6d243e4b00.
+0x00007f6d2be2b91c       Sched_L2ConsumeMsg(lib_com_dll.so)+(0x87c/0xb3c)
+
+<3> 与tulip崩溃提示信息对比。
+   0x00000000007c0bee <+0>:     push   %rbp
+   0x00000000007c0bef <+1>:     mov    %rsp,%rbp
+   0x00000000007c0bf2 <+4>:     sub    $0x50,%rsp
+   0x00000000007c0bf6 <+8>:     mov    %edi,-0x44(%rbp)
+   0x00000000007c0bf9 <+11>:    mov    %rsi,-0x50(%rbp)
+   0x00000000007c0bfd <+15>:    lea    -0x40(%rbp),%rax
+   0x00000000007c0c01 <+19>:    mov    $0x0,%edx
+   0x00000000007c0c06 <+24>:    mov    $0x1f,%ecx
+   0x00000000007c0c0b <+29>:    mov    %ecx,%edi
+   0x00000000007c0c0d <+31>:    and    $0xfffffff8,%edi
+   0x00000000007c0c10 <+34>:    mov    $0x0,%ecx
+   0x00000000007c0c15 <+39>:    mov    %ecx,%esi
+   0x00000000007c0c17 <+41>:    mov    %rdx,(%rax,%rsi,1)
+   0x00000000007c0c1b <+45>:    add    $0x8,%ecx
+   0x00000000007c0c1e <+48>:    cmp    %edi,%ecx
+   0x00000000007c0c20 <+50>:    jb     0x7c0c15 <fmMsgPreProc+39>
+   0x00000000007c0c22 <+52>:    mov    %ecx,%ecx
+   0x00000000007c0c24 <+54>:    add    %rcx,%rax
+   0x00000000007c0c27 <+57>:    mov    %edx,(%rax)
+   0x00000000007c0c29 <+59>:    add    $0x4,%rax
+   0x00000000007c0c2d <+63>:    mov    %dx,(%rax)
+   0x00000000007c0c30 <+66>:    add    $0x2,%rax
+   0x00000000007c0c34 <+70>:    mov    %dl,(%rax)
+   0x00000000007c0c36 <+72>:    add    $0x1,%rax
+   0x00000000007c0c3a <+76>:    movq   $0x0,-0x10(%rbp)
+   0x00000000007c0c42 <+84>:    movq   $0x0,-0x18(%rbp)
+   0x00000000007c0c4a <+92>:    movl   $0x1,-0x4(%rbp)
+   0x00000000007c0c51 <+99>:    cmpq   $0x0,-0x50(%rbp)
+   0x00000000007c0c56 <+104>:   jne    0x7c0c5d <fmMsgPreProc+111>
+   0x00000000007c0c58 <+106>:   jmpq   0x7c0d21 <fmMsgPreProc+307>
+   0x00000000007c0c5d <+111>:   lea    0x143523c(%rip),%rax        # 0x1bf5ea0 <g_tFmGlobal>
+---Type <return> to continue, or q <return> to quit---   
+   0x00000000007c0c64 <+118>:   mov    0x3c(%rax),%eax
+   0x00000000007c0c67 <+121>:   mov    %eax,-0x40(%rbp)
+   0x00000000007c0c6a <+124>:   mov    -0x44(%rbp),%eax
+   0x00000000007c0c6d <+127>:   mov    %eax,-0x3c(%rbp)
+   0x00000000007c0c70 <+130>:   mov    -0x50(%rbp),%rax
+   0x00000000007c0c74 <+134>:   mov    %rax,-0x2b(%rbp)
+   0x00000000007c0c78 <+138>:   lea    -0x40(%rbp),%rax
+   0x00000000007c0c7c <+142>:   add    $0x1d,%rax
+   0x00000000007c0c80 <+146>:   mov    %rax,%rdi
+   0x00000000007c0c83 <+149>:   callq  0x4d1cf0 <XOS_GetMsgDataLen@plt>
+   0x00000000007c0c88 <+154>:   mov    -0x44(%rbp),%eax
+   0x00000000007c0c8b <+157>:   cmp    $0x186a0,%eax
+   0x00000000007c0c90 <+162>:   je     0x7c0c9b <fmMsgPreProc+173>
+   0x00000000007c0c92 <+164>:   cmp    $0x304082,%eax
+   0x00000000007c0c97 <+169>:   je     0x7c0cb3 <fmMsgPreProc+197>
+   0x00000000007c0c99 <+171>:   jmp    0x7c0cd6 <fmMsgPreProc+232>
+   0x00000000007c0c9b <+173>:   lea    -0x40(%rbp),%rdx
+   0x00000000007c0c9f <+177>:   mov    -0x50(%rbp),%rax
+   0x00000000007c0ca3 <+181>:   mov    %rdx,%rsi
+   0x00000000007c0ca6 <+184>:   mov    %rax,%rdi
+   0x00000000007c0ca9 <+187>:   callq  0x7c0a28 <fmDimMsgKey>
+   0x00000000007c0cae <+192>:   mov    %eax,-0x4(%rbp)
+   0x00000000007c0cb1 <+195>:   jmp    0x7c0cd6 <fmMsgPreProc+232>
+   0x00000000007c0cb3 <+197>:   mov    -0x50(%rbp),%rax
+   0x00000000007c0cb7 <+201>:   mov    %rax,-0x10(%rbp)
+   0x00000000007c0cbb <+205>:   mov    -0x10(%rbp),%rax
+   0x00000000007c0cbf <+209>:   add    $0x4,%rax
+   0x00000000007c0cc3 <+213>:   mov    %rax,-0x37(%rbp)
+   0x00000000007c0cc7 <+217>:   movl   $0x19,-0x2f(%rbp)
+   0x00000000007c0cce <+224>:   movl   $0x0,-0x4(%rbp)
+   0x00000000007c0cd5 <+231>:   nop
+   0x00000000007c0cd6 <+232>:   mov    -0x37(%rbp),%rax
+---Type <return> to continue, or q <return> to quit---
+   0x00000000007c0cda <+236>:   mov    %rax,-0x18(%rbp)
+   0x00000000007c0cde <+240>:   cmpl   $0x0,-0x4(%rbp)
+   0x00000000007c0ce2 <+244>:   je     0x7c0d02 <fmMsgPreProc+276>
+   0x00000000007c0ce4 <+246>:   mov    -0x18(%rbp),%rax
+   0x00000000007c0ce8 <+250>:   movzwl 0x17(%rax),%eax
+-----------------------------------------------------------------------------
+typedef struct
+{
+    BYTE abKeyData[RCP_USER_KEY_LEN];  22 
+    BYTE bKeyType; /*RCP_USER_TYPE_IMSI RCP_USER_TYPE_MSISDN*/ 1
+    WORD wKeyLen;       2
+}_PACKED_1_ T_USER_KEY_INFO;
+
+0x17->23 所有挂在 ->bKeyType处
+-----------------------------------------------------------------------------
+   0x00000000007c0cec <+254>:   test   %ax,%ax
+   0x00000000007c0cef <+257>:   je     0x7c0d02 <fmMsgPreProc+276>
+   0x00000000007c0cf1 <+259>:   mov    -0x18(%rbp),%rax
+   0x00000000007c0cf5 <+263>:   mov    %rax,%rdi
+   0x00000000007c0cf8 <+266>:   callq  0x7c09d4 <fmHasKeyData>
+   0x00000000007c0cfd <+271>:   cmp    $0x1,%eax
+   0x00000000007c0d00 <+274>:   jne    0x7c0d15 <fmMsgPreProc+295>
+   0x00000000007c0d02 <+276>:   mov    -0x50(%rbp),%rdx
+   0x00000000007c0d06 <+280>:   mov    -0x44(%rbp),%eax
+   0x00000000007c0d09 <+283>:   mov    %rdx,%rsi
+   0x00000000007c0d0c <+286>:   mov    %eax,%edi
+   0x00000000007c0d0e <+288>:   callq  0x7c081c <rcpEventProc>
+   0x00000000007c0d13 <+293>:   jmp    0x7c0d21 <fmMsgPreProc+307>
+   0x00000000007c0d15 <+295>:   lea    -0x40(%rbp),%rax
+   0x00000000007c0d19 <+299>:   mov    %rax,%rdi
+   0x00000000007c0d1c <+302>:   callq  0x7c0abb <fmMsgCtrl>
+   0x00000000007c0d21 <+307>:   leaveq 
+   0x00000000007c0d22 <+308>:   retq   
+End of assembler dump.

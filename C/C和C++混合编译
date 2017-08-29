@@ -1,0 +1,32 @@
+1、C++调用C：
+http://www.cnblogs.com/xyzaijing/p/3603680.html
+http://blog.csdn.net/david_xtd/article/details/7448313
+
+2、C调用C++：
+http://www.cppblog.com/franksunny/archive/2007/11/29/37510.html
+
+3、
+<1>C++后缀
+UNIX系统 .cc
+非UNIX系统 .cpp
+
+<2>两种语言的差异
+C语言中,编译器对于函数 int test()和int test(int a)的编译结果得到的函数名是一样的,所以C语言不能重载;
+C++中int test()和int test(int a)编译后生成不同名字的函数,所以支持重载。
+
+<3>由于上述差异，需要使用如下宏
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+/**/
+
+#ifdef __cplusplus
+}
+#endif
+
+//.cpp编译时会自动生成__cplusplus宏。
+
+4、C/C++混合编译时，C++调用C和C++函数
+被调用的C函数声明需要包含在extern "C"中；被调用的C++函数不能包含在extern "C"中。
+.C会按C方式编译，.CPP、.CC会按C++方式编译。

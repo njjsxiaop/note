@@ -1,0 +1,73 @@
+1、凯易迅
+2、北京易捷思达科技发展有限公司 
+<1>云计算Linux系统工程师
+-计算：深入掌握Linux内核中虚拟内存，进程管理等子系统；熟悉KVM架构；
+-存储：深入掌握Linux内核中IO、文件系统等子系统； 深入理解分布式系统理论原理，并具有相关实践经验；熟悉Ceph/GlusterFS其中任意一种的架构与实现；
+-网络：深入掌握Linux内核Namespace,iptable/ebtable/bridge等模块与网络子系统；熟悉OSI模型和以太网原理，熟悉主流交换机/路由器工作原理与管理方式；熟悉Openflow,以及Vxlan/NvGRE/STT/TRILL/MPLS/BGP/OSPF/ISIS其中任意三种协议
+- 对云计算领域有充分的技术热情，能够主动学习新知识；
+- 有团队合作的精神；
+- 了解OpenStack开源云平台，有使用经验者优先；
+
+<2>云计算大数据方向工程师
+- 熟悉Hadoop、Sprak、Storm等云计算大数据平台，具备编写处理程序经验；
+- 熟悉Linux操作系统；熟练使用Shell和Python编程语言；
+- 熟悉OpenStack云平台，有部署和使用经验；
+- 有大规模数据处理工作经验者优先；
+- 具备良好的自我学习能力、沟通能力和团队协作能力；
+
+
+3、中新赛特
+<1>Linux开发工程师
+1.本科及以上学历，计算机、电子、通信及相关专业毕业，2年以上C/C++开发经验；
+2.熟悉Window/Linux操作系统和VS开发环境； 
+3.熟悉Window/Linux下的socket、IPC、多进程、多线程编程，熟悉计算机网络协议；
+4.熟悉常用的国际标准加解密算法体系；
+5.熟悉7号信令，熟悉GSM/WCMDA核心网相关接口和协议；
+6.良好的学习能力和沟通能力，能承受一定工作压力。
+
+
+4、趋势科技
+<1>Linux资深工程师
+- Bachelor's degree in Computer Engineering or Computer Science with more than 3 years experience
+- Indepth knowledge of linux OS
+- Able to finish module high-level and detail-level design;
+- Knowledge of internet protocol (HTTP, SMTP, FTP, etc) is a plus, familar with open source solutions
+- Familiar with CC++ development under linux environment;
+- Familiar with Shell and phppythod programming will be a plus
+- Web(html, js, ajax) programming is a plus
+- Good oral and writen skills in English
+- Fast learning, could learn new technoledge quickly and use them in development;
+
+
+
+
+------------------------------------------------------------------------------------------------------------------------------------------------------------
+linux内核学习之路：
+
+一、如果没有学过OS，先看<操作系统第3版>汤子赢：这本书虽然是通用教材，但是OS思想算法绝大多数和linux基本一致，也算必备基础
+然后看内核主线<linux内核设计与实现>.看过后你会发现和上面那本书框架差不多，不过这里单一针对linux主要的算法和实现原理
+再升级：<深入理解linux内核>这是不朽之作，真正的把内核原理剖析的相当细，原理讲解也很清楚！
+其他分支《深入理解网络技术内幕》《设备驱动》《精通设备驱动开发》《内核架构》都可以涉猎，此外还有个边角料《程序员自我修养，装载，链接》这个看了对内核进程PCB相关段内容有帮助，以及linux主要程序格式ELF解析
+一定要看看源代码， 祝你学习愉快！
+
+
+二、以下是我给你的建议，一定要给分啊。
+
+1. 了解操作系统基本概念。如果不会，可以学习《操作系统：设计与实现》Andrew S.Tanenbaum 写的那本。以MINIX为例子讲解操作系统的概念。非常推荐。
+2. 有了操作系统的基本概念以后，可以了解Linux的机制了。推荐《Linux内核设计与实现》Robert Love 写的。这本书从概念上讲解了Linux有什么，他们是怎么运行的。这本书要反复认真看透。
+3. 有了Linux内核的了解，还需要具体研究Linux内核源码。最经典的就是《深入理解Linux内核》Daniel P. Bovet 写的。学习这本书的时候，要对着内核代码看着学。这本书学起来相当费力了，那么多多代码要研究。不过这本书如果学明白了，恭喜你，Linux内核你已经很熟悉了。
+4. 如果要开发设备驱动，可以学习《linux设备驱动程序》O'Reilly出版社的。这本作为驱动的入门是很好的资料。另外还有一本《精通Linux 驱动程序开发》也是不错的教材，可以参考着看。学习驱动，免不了要学习一些硬件的协议和资料，研究哪个就找到相应的硬件文档，把硬件的工作原理搞明白。这些就不细说了。
+5. 网络部分，学些Linux网络部分就学习《深入理解LINUX网络技术内幕》。这本书把Linux的网络部分讲的非常清晰透彻。但是通常不做这方面的工作研究，也不用研究这么深，毕竟现在国内相关职位较少。
+6. 现在Linux相关的工作，多集中在一些嵌入式开发领域，arm，mips等，要学习以下这些体系架构的的资料，了解CPU的设计和工作方式。ARM就看对应的芯片手册，讲的很细致。MIPS就看 《see mips run》，有一二两版，两版内容有些差异，推荐都看。
+7. 补充一点经验。不要认为Linux很庞大，很复杂，就觉的很难学。任何东西认真学下来都是能学会的，看你都恒心和毅力了。另外，不要走弯路，不要看市面上讲什么Linux0.11的那些书，直接学你要学的东西。就像学C语言看什么谭浩强一样，弯路走了，力气没少花，还严重影响学习效果。
+
+你问的内核，多给你说几句应用编程，有时候经常会需要的：
+1. 学习Linux应用编程，建议看《unix环境高级编程》，把里面的例子都做一遍，会对整个Linux编程有系统都认识。
+2. 针对Linux，有本 《Linux系统编程》，学完上一本，这本很快看一遍就懂了。主要是针对Linux具体懂一些内容，讲的挺全了，很实用。
+3. Linux网络编程，系统的学习一下《unix网络编程.卷1,套接字联网api》，基本上网络应用相关的程序就都没问题了。
+
+这些内容，你分几年时间，分步计划学习，就会成为Linux高手了。
+
+-------------------------------------------------------------------------------------------------------------------------------------------------------------
+构建自己的代码库及软件开发不能是加工作坊：
+http://blog.csdn.net/benpaobagzb/article/details/50768535

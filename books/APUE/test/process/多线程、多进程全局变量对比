@@ -1,0 +1,89 @@
+1、多进程之间拥有多份全局变量
+#include <stdlib.h>
+#include <stdio.h>
+#include <unistd.h>
+
+int globvar = 10;
+
+int main()
+{
+    pid_t pid;
+
+    printf("start fork!\n");
+
+    if((pid = fork()) < 0)
+    {
+        printf("fork error!\n");
+    }
+    else if(0 == pid)
+    {
+        globvar++;
+        printf("Enter child process(%ld):\n", (long)getpid());
+        printf("\tglobvar = %d\n", globvar);
+    }
+    else
+    {
+        sleep(2);
+        printf("Enter parent process(%ld):\n", (long)getpid());
+        printf("\tglobvar = %d\n", globvar);
+    }
+
+    exit(0);
+}
+ 
+[root@opencos apue]# ./fork1 
+start fork!
+Enter child process(20631):
+        globvar = 11
+Enter parent process(20630):
+        globvar = 10
+
+2、多线程之间共享一份全局变量
+#include <stdio.h>
+#include <stdlib.h>
+#include <pthread.h>
+
+int globvar = 10;
+
+void printids(const char *s)
+{
+    pid_t pid;
+    pthread_t tid;
+
+    pid = getpid();
+    tid = pthread_self();
+    printf("%s pid %lu tid %lu (0x%lx)\n", s, (unsigned long)pid, (unsigned long)tid, (unsigned long)tid);
+}
+
+
+void *thr_fn(void *arg)
+{
+    globvar++;
+    printids("new thread:");
+    printf("globvar = %d.\n", globvar);
+    return (void *)0;
+}
+
+int main()
+{
+    int err;
+    pthread_t ntid;
+
+    err = pthread_create(&ntid, NULL, thr_fn, NULL);
+    if(0 != err)
+    {
+        printf("pthread_create error!\n");
+    }
+
+    sleep(2);
+    printids("main thread:");
+    printf("globvar = %d.\n", globvar);
+
+    exit(0);
+}
+
+[root@opencos apue]# ./thread4 
+new thread: pid 26454 tid 140117577430784 (0x7f6faa6df700)
+globvar = 11.
+main thread: pid 26454 tid 140117585717056 (0x7f6faaec6740)
+globvar = 11.

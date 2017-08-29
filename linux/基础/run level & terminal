@@ -1,0 +1,45 @@
+一、terminal/console (终端机接口) 
+1、linux提供6个文字模式的terminal和一个x windows模式的KID环境。
+
+2、文字接口和图形接口模式切换：
+   ctrl+alt+F1 ：图形接口
+   ctrl+alt+F2-F6：文字接口 （F7和F8？？）
+   
+   startx ：由文字接口进入图形接口（前提是X Window 需要设定 OK，且安装 KDE/GNOME等桌面系统）
+   
+3、设置开机默认模式：
+   我们知道在 Linux 开机之后，可以进入 X Window 或者是纯文字接口环境， 那么这两种环境是否可以变更呢？
+   那就涉及所谓的『Run Level』了，你可以将预设启动的 X Window(Run level 等级为 5)改为不启动(Run level 3)，只要修订一下 /etc/inittab 这个档案的内容。
+   
+   注意：centos 7的/etc/inittab 已经作废，取而代之的是/usr/lib/systemd/system/ctrl-alt-del.target 。通过systemctl get-default查看当前target。
+   # inittab is no longer used when using systemd.
+   # ADDING CONFIGURATION HERE WILL HAVE NO EFFECT ON YOUR SYSTEM.
+   # Ctrl-Alt-Delete is handled by /usr/lib/systemd/system/ctrl-alt-del.target
+   # systemd uses 'targets' instead of runlevels. By default, there are two main targets:
+   # multi-user.target: analogous to runlevel 3
+   # graphical.target: analogous to runlevel 5
+   # To view current default target, run:
+   # systemctl get-default
+   # To set a default target, run:
+   # systemctl set-default TARGET.target
+
+二、run level
+1、Linux系统有7个运行级别(runlevel)
+   运行级别0：系统停机状态，系统默认运行级别不能设为0，否则不能正常启动
+   运行级别1：单用户工作状态，root权限，用于系统维护，禁止远程登陆
+   运行级别2：多用户状态(没有NFS)
+   运行级别3：完全的多用户状态(有NFS)，登陆后进入控制台命令行模式
+   运行级别4：系统未使用，保留
+   运行级别5：X11控制台，登陆后进入图形GUI模式
+   运行级别6：系统正常关闭并重启，默认运行级别不能设为6，否则不能正常启动
+   
+2、查看运行级别用：runlevel
+   进入其它运行级别用：init N
+   另外init0为关机，init 6为重启系统
+  
+注意：
+linux tty命令行模式是不支持中文编码的，显示出来都是正方形块块。图形界面和ssh远程登录是可以显示中文的。
+
+https://wiki.centos.org/zh/HowTos/Laptops/Wireless?highlight=%25284965%2529
+
+   

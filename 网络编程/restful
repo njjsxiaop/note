@@ -1,0 +1,32 @@
+https://www.zhihu.com/question/28557115
+
+一、简单理解
+1、REST:表现层状态转移。URL定位资源，用HTTP动词(GET\POST\DELETE\DETC)描述操作。
+<1>资源是REST架构或者说整个网络处理的核心。
+
+2、REST描述的是在网络中client和server的一种交互形式;REST本身不实用，实用的是如何设计RESTful API(REST风格的网络接口)。
+<1>server提供的RESTful API中，URL中只使用名词来指定资源，原则上不使用动词;
+<2>用HTTP协议里的动词来实现资源的添加、修改、删除等操作，实现资源状态的扭转;
+<3>server和client之间传递某资源的一个表现形式，比如用JSON、XML传输文本，用JPG传输图片等;
+<4>用HTTP Status Code传递server的状态信息，比如200表示成功，500表示server内部错误等。
+
+二、进一步理解
+1、REST-REpresentational State Transfer，全称应该是Resouce Representational State Transfer，
+即资源在网络中以某种表现形式进行状态转移。
+<1>Resource 资源
+<2>Reprenstational 某种表现形式，比如JSON、XML、JPEG等
+<3>State Transfer 状态变化，通过HTTP动词实现
+
+2、如何设计以满足RESTful要求
+<1>URL root
+<2>API versioning:可以放在URL里面，也可以用HTTP的header
+<3>URL使用名词而不是动词，且推荐用复数
+<4>保证HEAD和GET方法是安全的，不会对资源状态进行改变
+<5>资源的地址推荐使用嵌套结构
+<6>警惕返回结果的大小，过大要及时分页
+<7>正确使用HTTP Status Code表示访问状态
+<8>返回结果用明确易懂的文本，适当加入注释
+<9>关于安全
+
+3、restful无状态理解
+http://blog.csdn.net/Jmilk/article/details/50461577

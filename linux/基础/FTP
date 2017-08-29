@@ -1,0 +1,182 @@
+参考资料
+http://blog.csdn.net/mo_gua/article/details/6311894
+http://blog.csdn.net/qq100440110/article/details/51058444
+http://bbs.csdn.net/topics/390610630
+http://blog.csdn.net/cuker919/article/details/6403925
+http://blog.csdn.net/shmilychan/article/details/51848850
+
+一、FTP基础
+1、FTP的端口
+<1>在主动模式中，FTP的两个端口是相对固定的。默认情况下，命令端口21，数据端口20。
+如果命令端口是x，那数据端口就是x-1，也就是说把命令端口改成了123，那么数据端口就是122。
+<2>在被动模式中默认情况下命令端口是21，但是数据端口是随机的，不过被动模式中数据端口的范围是可以自定义的。
+
+2、FTP的两种工作模式
+在使用FTP时，如果客户端机器和FTP服务器双方之间的所有端口都是开放的，那连接不存在问题。
+如果客户端与服务器之间有防火墙，但未配置好防火策略和采用合适的连接模式，会导致登录成功，但无法List列表的问题。
+为了避免出现这样的问题，首先要了解FTP的工作模式。
+
+<1>FTP支持两种模式，一种叫Standard(也就是PORT方式，主动方式)；一种是Passive(也就是PASV方式，被动方式)。
+
+<2>主动模式下:客户端给服务器端的21端口发命令说，我要下载什么什么，并且还会说我已经打开了自己的某个端口，你就从这里把东西给我吧，
+服务器知道后就会通过数据端口20把东西传给客户端，这就是主动模式，可以理解为服务端主动给客户端传输文件。
+
+FTP客户端连接到FTP服务器的21端口，发送用户名和密码登录。
+登录成功后要list列表或者读取数据时，客户端随机开放一个端口(1024以上)，发送 PORT命令到FTP服务器，告诉服务器客户端采用主动模式并开放端口；
+FTP服务器收到PORT主动模式命令和端口号后，通过服务器的20端口和客户端开放的端口连接，发送数据。
+
+<3>在被动模式下:客户端给服务器端的21端口发命令说，我要下载什么什么，服务器端知道后，就打开一个端口，然后告诉客户端，我已经打开了某某端口，
+你自己进去拿吧，于是客户端就从那个端口进去拿文件了，这就是被动模式，可以理解为服务端被客户端拿走了东西。
+
+FTP客户端连接到FTP服务器的21端口，发送用户名和密码登录。
+登录成功后要list列表或者读取数据时，发送PASV命令到FTP服务器，服务器在本地随机开放一个端口(1024以上)，然后把开放的端口告诉客户端，
+客户端再连接到服务器开放的端口进行数据传输。
+
+<4>异常情况：
+服务器端只开放了21端口，客户端机器没开放任何端口，FTP客户端连接采用的被动模式。
+结果客户端能登录成功，但是无法LIST列表和读取数据。
+很明显，是因为服务器端没开放被动模式下的随机端口导致的。
+
+3、出现被动模式的原因：
+<1>共享ip：
+某个局域网共享210.33.25.1这个公网IP上网，当一个内网用户192.168.0.100去访问外网的FTP服务器时，
+如果采用主动模式的话，192.168.0.1告诉了FTP服务器我需要某个文件和我打开了x端口之后，
+由于共享上网的原因，192.168.0.1在出网关的时候自己的IP地址已经被翻译成了210.33.25.1这个公网IP，
+所以服务器端收到的消息也就是210.33.25.1需要某个文件并打开了x端口，FTP服务器就会往210.33.25.1的x端口传数据，
+这样当然会连接不成功了，因为打开x端口的并不是210.33.25.1这个地址，在这种情况下被动模式就有用了。
+
+<2>客户端防火墙
+很多客户端都是在防火墙内，开放端口给FTP服务器访问比较困难。
+
+4、FTP两种传输方式(文本传输、二进制传输)
+详见 "C/从(ASCII,bin)传输到(文件,二进制)文件"
+
+5、ftp\ftps\sftp\vsftpd
+ftp是一种文件传输协议。
+ftps是加密版的FTP，一种替代FTPS的协议是安全文件传输协议(SFTP)。
+sftp是基于ssh协议的加密ftp传输协议。
+vsftpd是一款ftp服务器，支持ftp协议，不支持sftp协议。
+
+5、sftp(Secure File Transfer Protocol)
+<1>centos 7下本身就存在一个sftp服务器(/usr/libexec/openssh/sftp-server)。
+<2>SSH软件包中，包含一个叫作sftp的安全文件传输子系统，SFTP本身没有单独的守护进程，
+它必须使用sshd守护进程（端口号默认是22）来完成相应的连接操作。
+所以从某种意义上来说，SFTP并不像一个服务器程序，而更像是一个客户端程序。
+SFTP同样是使用加密传输认证信息和传输的数据，所以，使用SFTP是非常安全的。
+但是，由于这种传输方式使用了加密/解密技术，所以传输效率比普通的FTP要低得多，如果您对网络安全性要求更高时，可以使用SFTP代替FTP。
+
+二、FTP服务器配置
+1、是否已安装vsftpd(Very Secure Ftp Daemon)
+
+2、修改配置/etc/vsftpd/vsftpd.conf
+该配置文件定义了 用户登录控制、用户权限控制、超时设置、服务器功能选项、服务器性能选项、服务器响应消息 等FTP服务器的配置。
+
+# 表示允许匿名用户登录（默认为 YES） .
+anonymous_enable=YES
+# 表示允许本地用户登录（默认为 YES） .
+local_enable=YES
+# 表示开放对本地用户的写权限（默认 YES，如仅用作加载文件服务器，可改为NO） .
+write_enable=NO
+# 设置本地用户的文件生成掩码（默认对本地用户的文件生成掩码是 077，可改为 022)
+local_umask=022
+# 允许匿名 FTP 用户上载文件（默认为 NO） .
+#anon_upload_enable=YES
+# 允许匿名 FTP 用户创建目录（默认为 NO） .
+#anon_mkdir_write_enable=YES
+# 启用 FTP 数据端口的连接请求（默认为 YES） .
+connect_from_port_20=YES
+# 使用 PAM 认证的配置文件名，文件位于/etc/pam.d 目录下
+pam_service_name=vsftpd
+# 是否使用 userlist 文件控制访问 FTP 服务器
+userlist_enable=YES
+# 设置禁止访问的文件或目录
+#deny_file={*.mp3,*.mov,.private}
+# 设置隐藏的文件或目录
+#hide_file={*.mp3,.hidden,hide*,h?}
+# 设置 FTP 被动模式开放端口范围
+pasv_min_port=20001
+pasv_max_port=21000
+# 设置非匿名登录用户的主目录
+#local_root=/var/ftp/pub
+更多的配置可查看 vsftpd.conf 文档
+# man vsftpd.conf
+
+3、修改配置文件/etc/vsftpd/vsftpd.user_list 
+<1>当/etc/vsftpd/vsftpd.conf配置文件中配置如下时，禁止该配置文件中的所有用户访问FTP服务器。
+userlist_enable=YES
+userlist_deny=YES	(缺省为 YES)
+
+<2>当/etc/vsftpd/vsftpd.conf配置文件中配置如下时，允许该配置文件中的所有用户访问FTP服务器。
+userlist_enable=YES
+userlist_deny=NO
+
+4、修改配置文件/etc/vsftpd/ftpusers，该配置文件中的用户将被禁止访问FTP服务器。
+
+5、关闭SELinux。
+
+6、关闭或配置防火墙。
+<1>关闭防火墙
+
+<2>配置防火墙
+设置默认规则
+# iptables -A INPUT -j DROP（注：添加此条规则会阻止未处理的传入数据包，如在此规则之前未添加允许规则将会阻止远程连接）
+# iptables -A FORWARD -j ACCEPT
+
+开放 FTP 端口
+# iptables -I INPUT -p tcp --dport 21 -j ACCEPT
+# iptables -I OUTPUT -p tcp --sport 21 -j ACCEPT
+# iptables -I INPUT -p tcp --dport 20 -j ACCEPT
+# iptables -I OUTPUT -p tcp --sport 20 -j ACCEPT
+# iptables -I INPUT -p tcp --dport 20001:21000 -j ACCEPT
+# iptables -I OUTPUT -p tcp --sport 20001:21000 -j ACCEPT
+
+保存防火墙设置
+# iptables-save > /etc/sysconfig/iptables
+
+7、启动vsftp服务。
+
+8、复制文件到FTP目录
+<1>如未设置local_root=/var/ftp/pub时，复制文件到/home/xxxx (用户的home目录)
+<2>如已设置local_root=/var/ftp/pub时，复制文件到/var/ftp/pub
+<3>如已设置anonymous_enable=YES时，复制文件到/var/ftp或/var/ftp/pub(匿名登录的主目录)
+
+9、FTP服务端
+<1>安装ftp客户端	 ftp.x86_64 : The standard UNIX FTP (File Transfer Protocol) client
+
+<2>连接和使用
+-bash-4.2# ftp 10.42.6.27
+Connected to 10.42.6.27 (10.42.6.27).
+220 (vsFTPd 3.0.2)
+Name (10.42.6.27:root): root
+331 Please specify the password.
+Password:
+230 Login successful.
+Remote system type is UNIX.
+Using binary mode to transfer files.
+
+ftp> help
+Commands may be abbreviated.  Commands are:
+
+!               debug           mdir            sendport        site
+$               dir             mget            put             size
+account         disconnect      mkdir           pwd             status
+append          exit            mls             quit            struct
+ascii           form            mode            quote           system
+bell            get             modtime         recv            sunique
+binary          glob            mput            reget           tenex
+bye             hash            newer           rstatus         tick
+case            help            nmap            rhelp           trace
+cd              idle            nlist           rename          type
+cdup            image           ntrans          reset           user
+chmod           lcd             open            restart         umask
+close           ls              prompt          rmdir           verbose
+cr              macdef          passive         runique         ?
+delete          mdelete         proxy           send
+
+
+
+
+
+
+
+

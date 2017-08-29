@@ -1,0 +1,282 @@
+1、查询系统信息
+<1> uname -r  //显示电脑及操作系统相关信息
+<2> cat /proc/version   //正在运行的内核版本
+<3> cat /etc/issue      //发行版本信息
+<4> lsb_release -a      //某些情况下要安装lsb
+
+red hat：
+<1>cat /etc/redhat-release
+<2>rpm -q redhat-release
+
+linux操作系统的模块操作命令
+<1> lsmod (list modules)
+	一个小程序用于显示/proc/modules的信息，当前内核已装载的系统模块。
+	linux操作系统的内核具有模块化的特性，因此在编译内核时，需要将全部功能都放入内核。可以将这些功能编译成一个个单独的模块，待需要时再分别载入。
+<2> modinfo 模块  //显示模块信息
+<3> rmmod 模块  //卸载模块，内核认为卸载模块不安全，需要添加命令强制卸载
+<4> insmod 模块 //加载模块，需要指定完整的路径和模块名
+
+2、内核回退(3.18.27-->3.10.327)
+[root@forimg ~]# uname -a
+Linux forimg.novalocal 3.18.27 #1 SMP Mon Feb 29 16:36:56 CST 2016 x86_64 x86_64
+
+<1> cat /boot/grub2/grub.cfg | grep '^\<menuentry\>'
+
+menuentry 'CentOS Linux (3.18.27) 7 (Core)' --class rhel fedora --class gnu-linux --class gnu --class os --unrestricted $menuentry_id_option 'gnulinux-3.18.27-advanced-7e8be671-88c4-4e76-90db-c8d5e86c5707' {
+m
+menuentry 'CentOS Linux (3.10.0-327.10.1.el7.x86_64) 7 (Core)' --class rhel fedora --class gnu-linux --class gnu --class os --unrestricted $menuentry_id_option 'gnulinux-3.10.0-327.10.1.el7.x86_64-advanced-7e8be671-88c4-4e76-90db-c8d5e86c5707' {
+m
+menuentry 'CentOS Linux (3.10.0-327.3.1.el7.x86_64) 7 (Core)' --class rhel fedora --class gnu-linux --class gnu --class os --unrestricted $menuentry_id_option 'gnulinux-3.10.0-327.3.1.el7.x86_64-advanced-7e8be671-88c4-4e76-90db-c8d5e86c5707' {
+m
+menuentry 'CentOS Linux (3.10.0-229.14.1.el7.x86_64) 7 (Core)' --class rhel fedora --class gnu-linux --class gnu --class os --unrestricted $menuentry_id_option 'gnulinux-3.10.0-229.14.1.el7.x86_64-advanced-7e8be671-88c4-4e76-90db-c8d5e86c5707' {
+m
+menuentry 'CentOS Linux (3.10.0-229.el7.x86_64) 7 (Core)' --class rhel fedora --class gnu-linux --class gnu --class os --unrestricted $menuentry_id_option 'gnulinux-3.10.0-229.el7.x86_64-advanced-7e8be671-88c4-4e76-90db-c8d5e86c5707' {
+m
+menuentry 'CentOS Linux (0-rescue-1323cceb05ae4830ab91939fa041fcd3) 7 (Core)' --class rhel fedora --class gnu-linux --class gnu --class os --unrestricted $menuentry_id_option 'gnulinux-0-rescue-1323cceb05ae4830ab91939fa041fcd3-advanced-7e8be671-88c4-4e76-90db-c8d5e86c5707' {
+
+<2> grub2-set-default "CentOS Linux (3.10.0-327.10.1.el7.x86_64) 7 (Core)"   //设置默认启动项
+<3> grub2-editenv list //验证默认启动项
+saved_entry=CentOS Linux (3.10.0-327.10.1.el7.x86_64) 7 (Core)
+<4> reboot   //重启虚机
+
+[root@forimg ~]# uname -a
+Linux forimg.novalocal 3.10.0-327.10.1.el7.x86_64 #1 SMP Tue Feb 16 17:03:50 UTC 2016 x86_64 x86_64 x86_64 GNU/Linux
+
+3、修改内核启动参数
+由于tulip创建线程时，设置了调度属性，如果不关闭cgroup，则tulip上电失败。 修改内核启动参数，禁用cgroup。
+<1> 配置内核启动参数/etc/default/grub，向GRUB_CMDLINE_LINUX配置项中 增加如下内容。
+cgroup_disable=cpu,cpuset,memory
+<2> 加载配置
+请区分固件接口类型, 如果执行ls /sys/firmware/efi有结果输出则为UEFI，否则为BIOS。
+#BIOS模式
+grub2-mkconfig -o /boot/grub2/grub.cfg
+#UEFI模式
+grub2-mkconfig -o /boot/efi/EFI/centos/grub.cfg
+<3> 重启linux系统，检查内核参数是否修改成功
+reboot	```																																													
+cat /proc/cmdline
+BOOT_IMAGE=/vmlinuz-3.10.0-327.el7.x86_64 root=/dev/mapper/centos-root ro crashkernel=auto rd.lvm.lv=centos/root rd.lvm.lv=centos/swap rhgb quiet cgroup_disable=cpu,cpuset,memory
+
+4、新建SWAP分区  
+<1>说明
+1)一种流行的、以讹传讹的说法是，安装Linux系统时，交换分区swap的大小应该是内存的两倍
+2)SWAP就是LINUX下的虚拟内存分区,它的作用是在物理内存使用完之后,将磁盘空间(也就是SWAP分区)虚拟成内存来使用。
+[root@forimg ~]# free
+              total        used        free      shared  buff/cache   available
+Mem:       16432744      351592    15709788        8980      371364    15867496
+Swap:             0           0           0
+
+[root@forimg ~]# dd if=/dev/zero of=/var/swapfile bs=1024 count=1048576
+   //将/dev/zero内容写入/var/swapfile，读写块大小1024bytes，块个数1048576
+。(swap空间为1G)(/dev/zero是一个未使用的文件模板，可以用来创建“干净”的文件)
+[root@forimg ~]# mkswap /var/swapfile
+   //把该文件变为swap文件
+[root@forimg ~]# swapon /var/swapfile   //激活这个swap文件
+[root@forimg ~]# echo "/var/swapfile swap swap default 0 0" >> /etc/fstab   //设置SWAP分区开机启动
+检查SWAP分区。
+
+[root@forimg ~]# free
+              total        used        free      shared  buff/cache   available
+Mem:       16432744      360704    14618780        8984     1453260    15843764
+Swap:       1048572           0     1048572
+
+3)删除多余的swap空间
+[root@forimg ~]# swapoff /var/swapfile  //使用swapoff命令回收swap空间
+去掉/etc/fstab中的开机启动项
+[root@forimg ~]# rm /var/swapfile       //从文件系统中回收该文件
+
+5、释放buff/cache空间
+   buffer作为buffer cache的内存，是块设备的读写缓冲区；cache作为page cache的内存，文件系统的cache。如果cache的值很大，说明cache住的文件数很多。
+   释放方法有三种（系统默认值是0，释放之后你可以再改回0值）：
+   To free pagecache: echo 1 > /proc/sys/vm/drop_caches
+   To free dentries and inodes: echo 2 > /proc/sys/vm/drop_caches
+   To free pagecache, dentries and inodes: echo 3 > /proc/sys/vm/drop_caches
+
+   注意：在清空缓存前我们需要在linux系统中执行一下sync命令，将缓存中的未被写入磁盘的内容写到磁盘上。
+   
+6、dd命令
+
+7、巨页
+<1>目前使用到的
+1)内核启动参数配置文件 /etc/default/grub 向GRUB_CMDLINE_LINUX配置项中 增加如下内容：
+hugepagesz=2M hugepages=1024
+
+2)加载配置。区分固件接口类型：执行ls /sys/firmware/efi，如果有结果输出则为UEFI，否则为BIOS。
+#BIOS模式
+root@xiii: ~ # grub2-mkconfig -o /boot/grub2/grub.cfg
+
+#UEFI模式
+root@xiii: ~ # grub2-mkconfig -o /boot/efi/EFI/centos/grub.cfg
+
+3)重启虚机，检查内核参数是否修改成功
+[root@opencos ~]# cat /proc/cmdline 
+BOOT_IMAGE=/vmlinuz-3.10.0-327.36.3.el7.x86_64 root=/dev/mapper/centos-root ro rhgb quiet cgroup_disable=cpu,cpuset,memory hugepagesz=2M hugepages=1024
+
+<2>使用HugePages优化内存性能    http://www.linuxidc.com/Linux/2015-03/114587.htm
+1)引子
+系统进程是通过虚拟地址访问内存，但是CPU必须把它转换程物理内存地址才能真正访问内存。
+为了提高这个转换效率，CPU会缓存最近的虚拟内存地址和物理内存地址的映射关系，并保存在一个由CPU维护的映射表中。
+为了尽量提高内存的访问速度，需要在映射表中保存尽量多的映射关系。
+
+而在Linux中，内存都是以页的形式划分的，默认情况下每页是4K，这就意味着如果物理内存很大，则映射表的条目将会非常多，会影响CPU的检索效率。
+因为内存大小是固定的，为了减少映射表的条目，可采取的办法只有增加页的尺寸。 
+
+
+2)相关概念
+-page table是操作系统上的虚拟内存系统的数据结构模型，用于存储虚拟地址与物理地址的对应关系。
+当我们访问内存时，首先访问page table，然后Linux在通过page table的mapping来访问真实物理内存(ram+swap)。
+
+-A Translation Lookaside Buffer (TLB):
+TLB是在cpu中分配的一个固定大小的buffer(or cache)，用于保存page table的部分内容，使CPU更快的访问并进行地址转换。
+
+-hugetlb 是记录在TLB中的条目并指向Hugepages。
+
+-hugetlbfs:这是一个新的基于2.6 kernel之上的内存文件系统，如同tmpfs。
+在TLB中通过hugetlb来指向hugepages。这些被分配的hugepages作为内存文件系统hugetlbfs(类似tmpfs)提供给进程使用。
+
+3)使用HugePages的意义
+HugePages是Linux内核的一个特性，使用hugepage可以用更大的内存页来取代传统的4K页面。使用HugePage主要带来以下好处：
+
+-HugePages 会在系统启动时，直接分配并保留对应大小的内存区域。
+-HugePages 在开机之后，如果没有管理员的介入，是不会释放和改变的。
+-没有swap。
+Notswappable: HugePages are not swappable. Therefore there is no page-in/page-out mechanism overhead. 
+HugePages are universally regarded aspinned.
+
+-大大提高了CPU cache中存放的page table所覆盖的内存大小，从而提高了TLB命中率。
+进程的虚拟内存地址段先连接到page table然后再连接到物理内存。所以在访问内存时需要先访问page tables得到虚拟内存和物理内存的映射关系，然后再访问物理内存。
+CPU cache中有一部分TLB用来存放部分page table以提高这种转换的速度。因为page size变大了，所以同样大小的TLB，所覆盖的内存大小也变大了。
+提高了TLB命中率，也提高了地址转换的速度。
+
+-减轻page table的负载。
+进行XXX系统性能测试时，如果没有使用HugePages，数据库服务器上的pagetable大小大约为5G，
+这应该也是导致性能测试时数据库服务器内存不足的主要原因。
+node74:/home/Oracle # cat /proc/meminfo
+MemTotal:      16323732 kB
+PageTables:      5442384kB
+
+配置了HugePages后，pagetable大小仅为124M（性能测试时内存使用率稳定在80%左右）：
+node74:/home/oracle # cat /proc/meminfo
+MemTotal:      16323732 kB
+PageTables:      127384 kB
+
+-提高内存的性能，降低CPU负载。
+
+4)使用HugePages需要注意的地方
+-Hugepages是在分配后就会预留出来的，其大小一定要比服务器上所有实例的SGA总和要大，差一点都不行。
+比如说Hugepages设置为8G，oracle SGA为9G，那么oracle在启动的时候就不会使用到这8G的Hugepages。这8G就浪费了。
+所以在设置Hugepages时要计算SGA的大小，后面会给出一个脚本来计算。
+
+-其他进程无法使用Hugepages的内存，所以不要设置太大，稍稍比SGA大一点保证SGA可以使用到hugepages就好了。
+
+-在meminfo中和Hugepage相关的有四项：
+HugePages_Total:   4611
+HugePages_Free:     474
+HugePages_Rsvd:     467
+Hugepagesize:      2048 kB
+
+HugePages_Total为所分配的页面数目，和Hugepagesize相乘后得到所分配的内存大小。4611*2/1024大约为9GB
+HugePages_Free为从来没有被使用过的Hugepages数目。即使oraclesga已经分配了这部分内存，但是如果没有实际写入，那么看到的还是Free的。这是很容易误解的地方。
+HugePages_Rsvd为已经被分配预留但是还没有使用的page数目。在Oracle刚刚启动时，大部分内存应该都是Reserved并且Free的，随着oracle SGA的使用，Reserved和Free都会不断的降低。
+HugePages_Free、HugePages_Rsvd 这部分是没有被使用到的内存，如果没有其他的oracle instance，这部分内存也许永远都不会被使用到，也就是被浪费了。
+
+-HugePages和oracle AMM（自动内存管理）是互斥的，所以使用HugePages必须设置内存参数MEMORY_TARGET / MEMORY_MAX_TARGET 为0。
+
+8、sysctl命令  //http://blog.csdn.net/hncdsun/article/details/5093983
+<1>虚拟机使用scp向外拷贝文件时很慢，输入 “sysctl -w net.ipv4.tcp_window_scaling=0”
+
+<2>sysctl命令用于配置与显示在/proc/sys目录中的内核参数。可用来设置或重新设置联网功能，如IP转发、IP碎片去除以及源路由检查等。
+用户只需要编辑/etc/sysctl.conf文件，即可手工或自动执行由sysctl控制的功能。
+
+<3>命令格式：
+	sysctl [-n] [-e] -w variable=value
+    sysctl [-n] [-e] -p <filename> (default /etc/sysctl.conf)
+    sysctl [-n] [-e] -a
+	
+    常用参数的意义：
+    -w   临时改变某个指定参数的值，如
+         sysctl -w net.ipv4.ip_forward=1
+    -a   显示所有的系统参数
+    -p   从指定的文件加载系统参数，如不指定即从/etc/sysctl.conf中加载
+    
+	如果仅仅是想临时改变某个系统参数的值，可以用两种方法来实现,例如想启用IP路由转发功能：
+
+	1) #echo 1 > /proc/sys/net/ipv4/ip_forward
+    2) #sysctl -w net.ipv4.ip_forward=1
+    以上两种方法都可能立即开启路由功能，但如果系统重启，或执行了
+    # service network restart命令，所设置的值即会丢失。
+	
+	如果想永久保留配置，可以修改/etc/sysctl.conf文件将 net.ipv4.ip_forward=0改为net.ipv4.ip_forward=1。
+
+<4>其他说明：
+1)/proc：该目录是一个"虚拟档案系统"，该目录下的数据都在内存中，不占任何磁盘空间。
+
+2)net.ipv4.tcp_window_scaling = 1  //设置tcp/ip会话的滑动窗口大小是否可变。参数值为布尔值，为1时表示可变，为0时表示不可变。
+tcp/ip通常使用的窗口最大可达到 65535 字节，对于高速网络，该值可能太小，这时候如果启用了该功能，可以使tcp/ip滑动窗口大小增大数个数量级，
+从而提高数据传输的能力。
+
+3)其他一些参数说明：http://blog.chinaunix.net/uid-27022856-id-3235897.html
+
+9、系统抖动
+在请求分页存储管理中，从主存（DRAM）中刚刚换出（Swap Out）某一页面后（换出到Disk），根据请求马上又换入（Swap In）该页，
+这种反复换出换入的现象，称为系统颠簸，也叫系统抖动。产生该现象的主要原因是置换算法选择不当。
+危害：系统时间消耗在低速的I/O上，大大降低系统效率。进程对当前换出页的每一次访问，与对RAM中页的访问相比，要慢几个数量级。
+
+10、linux内存管理
+http://blog.csdn.net/a675311/article/details/49301967
+
+栈：是线程独有的，保存其运行状态和局部自动变量的。
+栈在线程开始的时候初始化，每个线程的栈互相独立，因此，栈是thread safe的。
+每个Ｃ＋＋对象的数据成员也存在在栈中，每个函数都有自己的栈，栈被用来在函数之间传递参数。
+操作系统在切换线程的时候会自动的切换栈，就是切换ＳＳ／ＥＳＰ寄存器。
+栈空间不需要在高级语言里面显式的分配和释放。
+
+进程是具有一定独立功能的程序关于某个数据集合上的一次运行活动,进程是系统进行资源分配和调度的一个独立单位。
+线程是进程的一个实体,是CPU调度和分派的基本单位,它是比进程更小的能独立运行的基本单位。
+线程自己基本上不拥有系统资源,只拥有一点在运行中必不可少的资源(如程序计数器,一组寄存器和栈),但是它可与同属一个进程的其他的线程共享进程所拥有的全部资源。
+
+Linux操作系统采用虚拟内存管理技术，使得每个进程都有各自互不干涉的进程地址空间。
+该空间是块大小为4G的线性虚拟空间，用户所看到和接触到的都是该虚拟地址，无法看到实际的物理内存地址。
+利用这种虚拟地址不但能起到保护操作系统的效果（用户不能直接访问物理内存），
+而且更重要的是，用户程序可使用比实际物理内存更大的地址空间（具体的原因请看硬件基础部分）。
+在讨论进程空间细节前，这里先要澄清下面几个问题：
+第一、4G的进程地址空间被人为的分为两个部分——用户空间与内核空间。用户空间从0到3G（0xC0000000），内核空间占据3G到4G。用户进程通常情况下只能访问用户空间的虚拟地址，不能访问内核空间虚拟地址。只有用户进程进行系统调用（代表用户进程在内核态执行）等时刻可以访问到内核空间。
+第二、用户空间对应进程，所以每当进程切换，用户空间就会跟着变化；而内核空间是由内核负责映射，它并不会跟着进程改变，是固定的。内核空间地址有自己对应的页表（init_mm.pgd），用户进程各自有不同的页表。
+第三、每个进程的用户空间都是完全独立、互不相干的。不信的话，你可以把上面的程序同时运行10次（当然为了同时运行，让它们在返回前一同睡眠100秒吧），你会看到10个进程占用的线性地址一模一样。
+
+
+11、systemd    http://blog.jobbole.com/98671/
+<1>对于那些支持 systemd 的软件，安装的时候，会自动在/usr/lib/systemd/system目录添加一个配置文件。
+<2>如果你想让该软件开机启动，就执行下面的命令（以httpd.service为例）。
+   $ systemctl enable httpd
+   上面的命令相当于在/etc/systemd/system目录添加一个符号链接，指向/usr/lib/systemd/system里面的httpd.service文件。
+   这是因为开机时，Systemd只执行/etc/systemd/system目录里面的配置文件。这也意味着，如果把修改后的配置文件放在该目录，就可以达到覆盖原始配置的效果。
+   
+<3>相关命令
+$ sudo systemctl start httpd
+$ sudo systemctl status httpd
+$ sudo systemctl stop httpd.service
+$ sudo systemctl kill httpd.service
+$ sudo systemctl restart httpd.service
+# 重新加载配置文件
+$ sudo systemctl daemon-reload
+# 重启相关服务
+$ sudo systemctl restart foobar
+
+12、关闭CPU超频
+进入BIOS，选择设置中的 Load Default optimal（读取默认设置），确认后退出。
+
+13、关闭超线程
+进入BIOS，选择设置中的 Hyper-Threading Technology 选项，将其设置为[Disabied]，确认后退出。
+Advanced -> Intel RC Group -> Processor Configuration -> Hyper-Threading[ALL]
+
+14、linux怎么查看内存条数及每根内存大小
+<1>查看内存槽数、那个槽位插了内存，大小是多少
+dmidecode|grep -P -A5 "Memory\s+Device"|grep Size|grep -v Range
+<2>查看最大支持内存数
+dmidecode|grep -P 'Maximum\s+Capacity'
+<3>查看槽位上内存的速率，没插就是unknown。
+dmidecode|grep -A16 "Memory Device"|grep 'Speed'
+以下内容转发自：http://blog.sina.com.cn/s/blog_43b39e250100nlxz.html
+
+

@@ -1,0 +1,21 @@
+1、Linux如何在查找JDK安装路径
+[root@localhost ~]# which java
+/usr/bin/java
+[root@localhost ~]# ls -lrt /usr/bin/java
+lrwxrwxrwx. 1 root root 22 Aug 17 15:12 /usr/bin/java -> /etc/alternatives/java
+[root@localhost ~]# ls -lrt /etc/alternatives/java
+lrwxrwxrwx. 1 root root 46 Aug 17 15:12 /etc/alternatives/java -> /usr/lib/jvm/jre-1.7.0-openjdk.x86_64/bin/java
+
+
+2、查找系统命令的路径
+<1>which //查看系统命令是否存在，以及执行的到底是哪个位置的命令
+在PATH变量指定的路径中搜索某个系统命令的位置，并返回第一个搜索到的结果(第一个搜索到的结果也就是被执行的那个)。
+
+<2>whereis //查看一个命令或文件所在的路径，会搜出所有的路径
+只能用于程序名的搜索，只搜索二进制文件-b、man说明文件-m和源代码文件-s
+
+eg：
+[root@xiaopeng linux-4.8.1]# whereis man
+man: /usr/bin/man /usr/share/man /usr/share/man/man1/man.1.gz /usr/share/man/man1p/man.1p.gz /usr/share/man/man7/man.7.gz
+[root@xiaopeng linux-4.8.1]# which man
+/usr/bin/man

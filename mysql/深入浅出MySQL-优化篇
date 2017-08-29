@@ -1,0 +1,177 @@
+第17章 常用SQL技巧和常见问题
+17.1 正则表达式的使用
+1、MySQL利用REGEXP命令提供给用户扩展的正则表达式功能，REGEXP在进行模式匹配时是区分大小写的。
+^		在字符串的开始处进行匹配
+$		在字符串的末尾处进行匹配
+.		匹配任意单个字符，包括换行符
+[...]	匹配出括号内的任意字符
+[^...]	匹配不出括号内的任意字符
+a*		匹配零个或多个a(包括空串)
+a+		匹配1个或多个a(不包括空串)
+a?		匹配1个或0个a
+a1|a2	匹配a1或a2
+a(m)	匹配m个a
+a(m,)	匹配m个或更多个a
+a(m,n)	匹配m到n个a
+a(,n)	匹配0到n个a
+(...)	将模式元素组成单一元素
+
+eg：
+<1>
+mysql> select 'abcdefg' REGEXP '.a';
++-----------------------+
+| 'abcdefg' REGEXP '.a' |
++-----------------------+
+|                     0 |
++-----------------------+
+1 row in set (0.00 sec)
+
+mysql> select 'abcdefg' REGEXP '.b';
++-----------------------+
+| 'abcdefg' REGEXP '.b' |
++-----------------------+
+|                     1 |
++-----------------------+
+1 row in set (0.00 sec)
+
+<2>
+select name ,email from t where email REGEXP "@163[.,]com$";
+如果使用like需要写成如下形式：
+email like “@163%.com” or email like “@163%,com”
+
+17.2 巧用RAND()提取随机行
+1、RAND()与ORDER BY子句一起完成随机抽取某些行的功能。
+ORDER BY RAND() //把数据随机排序
+
+17.3 利用GROUP BY的WITH ROLLUP子句做统计
+使用GROUP BY的WITH ROLLUP子句可以检索出更多的分组聚合信息，它不仅能像GROUP BY语句那样检索出各组的聚合信息，还能检索出本组整体聚合信息。
+
+17.4 利用BIT GROUP FUNCTIONS做统计
+使用GROUP BY语句和BIT_AND、BIT_OR函数完成统计工作。这两个函数的一般用途就是做数值之间的逻辑位运算。
+
+eg：select customer_id,bit_or(kind) from order_rab group by customer_id;  //bit_or与group by联合统计每个客户在这个超市一共都购买了什么商品。
+	select customer_id,bit_and(kind) from order_rab group by customer_id; //bit_and与group by联合统计每个客户每次来本超市都会购买的商品。
+
+17.5 数据库名、表名大小写问题
+1、MySQL数据库对应操作系统下的数据目录，数据库中的每个表至少对应数据库目录中的一个文件。
+因此，所使用操作系统的大小写敏感性决定了数据库名和表名的大小写敏感性。
+<1>大多数UNIX系统对大小写敏感，导致数据库名和表名对大小写敏感；
+<2>windows系统对大小写不敏感，因此数据库名和表名对大小写不敏感。
+
+2、列、索引、存储子程序和触发器名在任何平台上对大小写不敏感。
+
+17.6 使用外键需要注意的问题
+MySQL的外键功能仅对InnoDB存储引擎的表有作用，其他类型存储引擎的表虽然可以建立外键，但是并不起作用。
+
+
+第18章 SQL优化
+18.1 优化SQL语句的一般步骤
+1、通过show status命令了解各种SQL的执行频率
+show [session|global] status  //提供服务器状态信息。session(默认值)表示当前连接的统计结果；global表示自数据库上次启动的统计结果。
+<1>show status like 'Com_%';
+Com_**表示每个**语句执行的次数。eg：Com_select\Com_insert\Com_update\Com_delete
+
+2、定位执行效率较低的SQL语句
+<1>通过慢查询日志定位那些执行效率低的SQL语句。慢查询日志在查询结束结束以后才记录。
+<2>使用show processlist命令查看当前MySQL在进行的线程，包括线程的状态、是否锁表。
+可以实时查看SQL的执行情况，同时对一些锁表操作进行优化。
+
+3、通过EXPLAIN分析低效SQL的执行计划
+通过EXPLAIN或DESC命令获取MYSQL如何执行SELECT语句的信息，包括SELECT语句执行过程中表如何连接和连接的顺序。
+mysql> explain select * from policy_little where PolicyId=1;
++----+-------------+---------------+------+----------------+----------------+---------+-------+------+-------+
+| id | select_type | table         | type | possible_keys  | key            | key_len | ref   | rows | Extra |
++----+-------------+---------------+------+----------------+----------------+---------+-------+------+-------+
+|  1 | SIMPLE      | policy_little | ref  | index_policyId | index_policyId | 5       | const |    5 | NULL  |
++----+-------------+---------------+------+----------------+----------------+---------+-------+------+-------+
+1 row in set (0.05 sec)
+
+1)select_type：
+SIMPLE:简单表，不使用表连接或子查询
+PRIMARY:主查询，即外层的查询
+UNION:UNION中的第二个或后面的查询语句
+SUBQUERY:子查询中的第一个SELECT
+
+2)type：连接类型。性能由好到差，如下：
+system:表中仅有一行，即常量表
+const:单表中最多有一个匹配行，如primary key或者unique index
+eq_ref:
+ref:
+ref_or_null:
+index_merge:
+unique_subquery:
+index_subquery:
+range:
+index:
+all:
+
+3)possible_keys	查询时可能使用的索引
+4)key			表示实际使用的索引
+5)key_len		索引字段的长度
+6)rows			扫描行的数量
+7)Extra			执行情况的说明和描述
+
+4、确定问题并采取相应的优化措施
+//可以发现建立索引后对a表需要扫描的行数明显减少，从1000行减少到1行，可见索引的使用可以大大提高数据库的访问速度。
+
+18.2 索引问题
+1、索引的存储分类
+<1>MyISAM存储引擎的表的数据和索引是自动分开存储的，各自是独立的一个文件；
+InnoDB存储引擎的表的数据和索引是存储在同一表空间里的，但可以有多个文件组成。
+
+<2>MySQL中索引的存储类型目前只有两种(BTREE和HASH)
+MyISAM和InnoDB存储引擎都只支持BTREE索引。
+MySQL目前不支持函数索引，但是能对列的前面某一部分进行索引。
+
+2、MySQL如何使用索引
+<1>如果是多列索引，那么只有查询条件使用了多列关键字左边的前缀时，才可以使用索引，否则将不能使用索引。
+eg：建立一个(a,b,c)复合索引，相当于建立(a,b,c)、(a,b)、(a)三种索引。
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

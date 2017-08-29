@@ -1,0 +1,181 @@
+一、下载
+1、wget  http://www.cnblogs.com/peida/archive/2013/03/18/2965369.html
+eg:wget -O docker-registry.html https://docs.docker.com/docker-trusted-registry/  //下载某个网页
+
+二、通过网络传输文件
+常见协议：FTP、SFTP、RSYNC、SCP
+通过FTP传输文件可以使用lftp命令；通过SSH连接传输文件可以使用sftp命令
+RSYNC使用SSH和rsync命令;scp通过SSH进行传输
+
+1、连接FTP服务器传输文件  
+远程主机安装FTP服务器才能使用，使用21端口。
+
+<1>lftp username@ftphost
+
+2、rcp   http://www.cnblogs.com/peida/archive/2013/03/14/2958685.html
+<1> rcp代表“remote file copy”（远程文件拷贝）。该命令用于在计算机之间拷贝文件。
+    rcp命令有两种格式:第一种格式用于文件到文件的拷贝\第二种格式用于把文件或目录拷贝到另一个目录中。
+<2> rcp [参数] [源文件] [目标文件]
+
+3、scp
+scp是secure copy的简写，用于在Linux下进行远程拷贝文件的命令，和它类似的命令有cp，不过cp只是在本机进行拷贝不能跨服务器，而且scp传输是加密的,可能会稍微影响一下速度。
+当你服务器硬盘变为只读 read only system时，用scp可以帮你把文件移出来。另外，scp还非常不占资源，不会提高多少系统负荷，在这一点上，rsync就远远不及它了。
+虽然 rsync比scp会快一点，但当小文件众多的情况下，rsync会导致硬盘I/O非常高，而scp基本不影响系统正常使用。
+<1>命令格式：
+scp [参数] [原路径] [目标路径]
+<2>命令功能：
+scp是 secure copy的缩写, scp是linux系统下基于ssh登陆进行安全的远程文件拷贝命令。linux的scp命令可以在linux服务器之间复制文件和目录。
+<3>用法：
+1) 本地文件复制到远程
+scp local_file remote_username@remote_ip:remote_folder  
+scp local_file remote_username@remote_ip:remote_file  
+scp local_file remote_ip:remote_folder  
+scp local_file remote_ip:remote_file  
+第1,2个指定了用户名，命令执行后需要输入用户密码，第1个仅指定了远程的目录，文件名字不变，第2个指定了文件名  
+第3,4个没有指定用户名，命令执行后需要输入用户名和密码，第3个仅指定了远程的目录，文件名字不变，第4个指定了文件名  
+2) 远程文件复制到本地
+从远程复制到本地的scp命令与上面的命令雷同，只要将从本地复制到远程的命令后面2个参数互换顺序就行了。
+eg：scp 10.43.214.192:/home/jenkins_workspace/test/date.txt ./date
+    scp 10.43.214.192:~/vim.tar .
+
+三、远程登录
+1、SSH   //详见linux脚本攻略
+SSH(Secure Shell)能够访问远程计算机的shell，进而执行各种命令。它通过加密通道来传输网络数据。
+GNU/Linux发布版本中默认不包括SSH，需要安装openssh-server和openssh-client。
+SSH服务默认运行在22端口之上。
+
+SSH执行指纹核对来确保用户连接到正确的远程主机，在第一次连接到服务器上，SSH默认会存储指纹信息，以后的连接过程中会核对该指纹。
+<1> ssh username@remote_ip
+    ssh username@remote_ip -p *** //指定端口
+	ssh username@remote_ip 'command1;command2;...' //在远程主机中执行命令，并将结果显示在本地shell中
+	
+<2> SSH的压缩功能  //当有带宽限制时使用
+    ssh -C username@remote_ip
+	
+<3> 将本地数据重定向到远程shell命令的stdin
+    sh username@remote_ip 'echo' < file  //远程主机上echo打印出通过stdin从本地接收到的数据
+
+<4> 在远程主机中执行图形化命令
+    需要设置DISPLAY变量，否则无法显示。
+	
+2、用SSH实现无密码自动登陆
+http://blog.csdn.net/kongqz/article/details/6338690
+SSH采用了非对称加密技术，认证秘钥包含一个公钥和一个私钥。通过ssh-keygen命令创建认证秘钥。
+要实现自动化认证，公钥必须放在服务器中(~/.ssh/authorized_keys),对应的私钥应该放在客户机的~/.ssh目录中。
+其中arthorized_keys文件的路径和名称可以通过/etc/ssh/sshd_config进行配置。
+<1>设置SSH自动化认证需要两步：
+1)创建SSH秘钥
+2)将生成的公钥传给远程主机，并将其加入文件~/.ssh/authorized_keys中
+$ ssh USER@REMOTE_IP 'cat >> ~/.ssh/authorized_keys' < ~/.ssh/id_rsa.pub 
+
+<2>ssh-copy-id工具在佛那个将公钥加入远程服务器的authorized_keys文件中
+ssh-copy-id USER@REMOTE_IP
+
+-------------------------------------------------------
+实际操作：
+<1>生成公钥和私钥
+ssh-keygen -t dsa
+<2>导入公钥到认证文件
+1)本机
+cat ~/.ssh/id_rsa.pub >> ~/.ssh/authorized_keys 
+2)服务器
+scp ~/.ssh/authorized_keys xxx@主机名:/home/xxx/.ssh/
+<3>设置权限
+chmod 700 ~/.ssh
+chmod 600 ~/.ssh/authorized_keys 
+
+<4>确认本机sshd的配置文件
+/etc/ssh/sshd_config
+找到以下内容，放开注释
+　　RSAAuthentication yes
+　　PubkeyAuthentication yes
+　　AuthorizedKeysFile      .ssh/authorized_keys
+如果修改了配置文件需要重启sshd服务 service sshd restart
+
+-------------------------------------------------------
+sshd_config配置文件：
+<1>允许root登陆
+PermitRootLogin yes
+
+<2>密码认证
+PasswordAuthentication yes
+
+<3>秘钥相关
+RSAAuthentication yes     //RSA秘钥认证
+PubkeyAuthentication yes  //公有秘钥认证
+AuthorizedKeysFile    .ssh/authorized_keys   //认证文件路径
+
+<4>SSH超时断开
+-服务器端：
+1)ClientAliveInterval 参数，如果没有就自己加一行，单位是秒
+ClientAliveInterval 60
+
+2)ClientAliveCountMax 参数，如果发现客户端没有响应，则判断一次超时，这个参数设置允许超时的次数。比如10 
+ClientAliveInterval 540 
+ClientAliveCountMax 10; 
+则代表允许超时 5400秒 = 90分钟 
+
+-客户端：
+1)ServerAliveInterval 参数，如果没有你同样自己加一个
+参数意义相同，都是秒数，比如9分钟 
+ServerAliveInterval 540
+
+-因此我们需要在CRT中配置定时发送心跳消息，防止SSH超时断开。
+方法一：Options-Terminal-Anti idle 勾上 发送协议NO OP  每 30S
+
+-------------------------------------------------------
+
+3、使用SSH进行端口转发
+端口转发允许其他计算机利用你的主机来连接到远程服务器上的特定服务。
+如：主机IP 192.168.1.2,将主机端口8000上的流程转发到www.kernel.org的端口80上，那么其他计算机就可以使用浏览器通过访问http://192.168.1.2:8000来进入Linux内核站点了。
+
+一旦端口转发设置完毕，会得到一个shell提示符，进行转发的过程中，shell必须保持打开状态。
+
+<1>将本地端口上的流量转发到其他主机上
+ssh -L 8000:www.kernel.org:80 user@localhost
+//user为本地主机的用户名
+
+<2>将远程主机上的流量转发到其他主机上
+ssh -L 8000:www.kernel.org:80 user@REMOTE_IP
+//user为使用SSH进行访问的用户名，REMOTE_IP为远程主机名或IP地址
+
+<3>非交互式端口转发
+如果只想设置端口转发，而不希望总是保持一个打开状态的shell，可以：
+ssh -fL 8000:www.kernl.org:80 user@localhost -N
+-f指定ssh在执行命令前转入到后台运行，-L指定远程主机的登录名，-N告诉SSH无需执行命令，只进行端口转发
+
+<4>反向端口转发
+如果你有一台无法通过互联网访问到的机器，但又希望其他用户可以访问到这台机器上的服务，就可以使用反向端口转发。
+在可以访问到的远程主机上设置反向端口转发，将流量转发到运行服务的本地主机上：
+ssh -R 8000:localhost:80 user@REMOTE_IP
+//将远程主机(设置反向转发的主机)端口8000上的流量转发到本地主机(运行服务的主机)端口80上，REMOTE_IP为远程主机的主机名或IP地址
+
+4、在本地挂载点上挂载远程驱动器
+在执行读写数据操作时，通过本地挂载点访问远程主机文件系统。可以利用SSH和sshfs来实现，sshfs允许将远程群文件系统挂载到本地挂载点上。
+sshfs -o allow_other user@remotehost:/home/path /mnt/mountpoint
+//远程的/home/path中的数据就可以通过/mnt/mountpoint来访问了
+
+完成任务后再通过 umount /mnt/mountpoint卸载
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+	

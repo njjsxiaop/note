@@ -1,0 +1,100 @@
+一、yum镜像源替换
+1、CentOS系统更换软件安装源（以网易163yum源为例 网易开源镜像站:http://mirrors.163.com/）  http://www.ruooo.com/VPS/594.html
+<1>备份你的原镜像文件，出错后可以恢复
+mv /etc/yum.repos.d/CentOS-Base.repo /etc/yum.repos.d/CentOS-Base.repo.backup
+<2>下载新的CentOS-Base.repo 到/etc/yum.repos.d/
+wget -O /etc/yum.repos.d/CentOS-Base.repo http://mirrors.163.com/.help/CentOS7-Base-163.repo   //CentOS 7
+<3>运行以下命令生成缓存 
+yum clean all
+yum makecache
+
+2、国内其他yum源
+阿里云Linux安装镜像源地址：http://mirrors.aliyun.com/
+中科大的Linux安装镜像源：http://centos.ustc.edu.cn/
+搜狐的Linux安装镜像源：http://mirrors.sohu.com/
+北京首都在线科技：http://mirrors.yun-idc.com/
+
+3、其他参考资料
+http://blog.csdn.net/inthirties/article/details/5465577
+http://www.tuicool.com/articles/qyiI3e
+
+二、安装
+1、rpm
+<1>rpm -ivh或yum install时报错
+https://unix.stackexchange.com/questions/256783/installing-html-tidy-conflicts-with-filesystem-package
+# yum install tidy-5.1.25-64bit.rpm
+......
+Transaction check error:
+file /usr/share/man from install of tidy-5.1.25-1.x86_64 conflicts
+  with file from package filesystem-3.2-20.el7.x86_64
+file /usr/share/man/man1 from install of tidy-5.1.25-1.x86_64 conflicts
+  with file from package filesystem-3.2-20.el7.x86_64
+
+"[root@rcp extra_rpms]# rpm -ivh c3-5.1.2-1.noarch.rpm 
+准备中...                          ################################# [100%]
+        file /usr/bin from install of c3-5.1.2-1.noarch conflicts with file from package filesystem-3.2-20.el7.x86_64"
+  
+解答：
+The reason why you're seeing that error is because the person who maintains the package incorrectly included 
+/usr/share/man and /usr/share/man/man1 in the RPM package's definition of what the package "owns". 
+Because the package claims to own that directory (and will try to delete it if you uninstall it), 
+yum detects that another, already installed package, 'filesystem' already owns it.
+
+Its a common mistake by people who are unfamiliar with creating RPMs. 
+That makes me less likely to trust that package, or any package from that web site.
+
+Have you looked at the tidyp package in EPEL? It is API-compatible and is packaged in a reputable repository.
+
+三、卸载（反安装）
+1、rpm -e 会将配置文件一起删除
+   rpm -e 套件名
+   rpm --rebuilddb //重建数据库
+2、yum remove 会保留配置文件  
+3、tarball卸载时，配置文件需要手动删除，比较麻烦。建议配置文件装在一个文件夹中。
+
+4、例子：
+<1>如果查出来的设定档案已经被我改过，但是我忘记了曾经修改过哪些地方，所以想要直接重新安装一次该套件，该如何作？
+假设该套件在网络上的网址为：http://web.site.name/path/httpd-x.x.xx.i386.rpm
+则我可以这样做：rpm -ivh http://web.site.name/path/httpd-x.x.xx.i386.rpm --replacepkgs
+<2>如果我误砍了某个重要档案，例如 /etc/crontab，偏偏不晓得他属于哪一个套件，该怎么办？
+虽然已经没有这个档案了，不过没有关系，因为 RPM 有纪录在 /var/lib/rpm 当中的数据库啊！所以直接下达：
+rpm -qf /etc/crontab 就可以知道是那个套件啰！重新安装一次该套件即可！
+
+(重新安装套件可以恢复套件档案！)
+
+四、配置文件
+<1>/var/lib/rpm(包含rpm数据库):安装完毕后，rpm会把套件信息写入/var/lib/rpm，以后进行查询或者是预计要升级的时候，相关的信息就会由 /var/lib/rpm这个目录的内容数据来提供。
+<2>/etc/pki/rpm-gpg/：GPG证书文件路径
+<3>/etc/yum.conf:设定档，可以设定一些环境参数之类的
+<4>/etc/yum.repos.d/CentOS-Base.repo:设置yum server的温度，可以修改 CentOS-Base.repo来改变server。
+<5>/var/cache/yum: yum下载的套件档案存在路径 可以使用yum clean清除。
+
+五、rpm验证与数字验证
+1、rpm验证
+<1>使用 /var/lib/rpm 底下的数据库内容来比对目前 Linux 系统的环境下的所有套件档案（如设定档/etc,说明档/man），了解哪些档案数据被修改过。
+2、数字验证
+<1>安装rpm文件的步骤：
+-- 首先必须安装原厂发布的公钥文件（Public Key，CentOS使用的是GPG） rpm --import /etc/pki/rpm-gpg/RPM-GPG-KEY-CentOS-7 
+-- 实际安装原厂RPM软件时，rpm命令会去读取RPM文件的证书信息，并与本机系统内的证书信息比较
+-- 证书相同则予以安装，若找不到证书信息，则予以告警并停止安装。(eg:GPG key retrieval failed: [Errno 14])
+<2>yum或rpm安装时报错：GPG key retrieval failed: [Errno 14]
+解决方法：1、安装公钥文件rpm --import /etc/pki/rpm-gpg/RPM-GPG-KEY-CentOS-7 ，安装时会出现证书比较，选择yes。
+          2、也可以选择携带参数--nogpgcheck，不检查公钥。
+		  （没有尝试：修改repo文件每仓库配置区域加或修改gpgcheck=0能仓库文件位置：/etc/yum.repos.d/*
+		              或者rpm --nosignature //忽略数字证书检查）
+					  
+六、yum
+1、版本升级（centos4.2->4.3）
+<1>修改/etc/yum.conf  最后一行加上 plugins=1
+<2>修改/etc/yum.repos.d/CentOS-Base.repo，如一中所示，配置好合适的yum源
+<3>yum upgrade
+2、版本升级（不同版本间）
+
+七、最小安装centos
+安装centos时选择最小安装，之后进入虚机执行：
+yum group install -y "Development and Creative Workstation"   //安装程序组
+其中："Development and Creative Workstation" 对应安装界面软件选择中的"开发及生成工作站"。
+
+yum install -y cmake git-review samba python-pip gcc gcc-c++ telnet zlib zlib-devel  //再安装需要的其他程序
+
+

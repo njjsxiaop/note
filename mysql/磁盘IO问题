@@ -1,0 +1,82 @@
+1、作为应用程序的持久化层，不管数据库采用什么Cache机制，但最终总要将数据存储到磁盘上。磁盘I/O通常总会称为数据库的一个性能瓶颈。
+<1>减少或延缓磁盘操作：SQL优化、数据库对象优化、数据库参数优化、应用程序优化等，大部分都是想通过减小或延缓磁盘读写来减轻磁盘I/O的压力。
+<2>增强磁盘I/O本身的性能和吞吐量：磁阵、符号链接、裸设备。
+
+2、使用磁盘阵列RAID(Redundant Array of Inexpensive Disks)
+RAID就是按照一定策略将数据分布到若干物理磁盘上，这样不仅增强了数据存储的可靠性，而且提高了数据读写的整体性能。
+因为通过分布实现了数据的“并行”读写。
+
+<1>如何选择RAID级别
+数据读写都很频繁，可靠性要求也很高，最好选择RAID 10；
+数据读很频繁，写相对较少，对可靠性有一定要求，可以选择RAID 5；//RAID 5写性能不及RAID 0、RAID 1、RAID10
+数据读写都很频繁，但可靠性要求不高，可以选择RAID 0。
+
+<2>虚拟文件卷或软RAID
+1)最初，RAID都是由硬件实现的，要用RAID，至少需要一个RAID卡。但现在，一些操作系统提供的软件包也模拟实现了一些RAID的特性。
+虽然性能上不及硬RAID，但相比单个磁盘，性能和可靠性都有所改善。
+如：Linux下的逻辑卷系统lvm2支持条带化(Stripe)；Linux下的MD(Multiple Device)驱动，支持RAID 0、RAID 1、RAID 4、RAID 5、RAID 6等。
+
+2)在不具备硬件条件的情况下，可以考虑使用上述虚拟文件卷或软RAID技术。
+
+3、使用Sumbolic Links分布I/O
+Sumbolic Links，符号链接，即软链接。
+<1>MySQL数据库和表名是与文件系统的目录名和文件名对应的。默认情况下创建的数据库和表都存放在参数datadir定义的目录下。
+这样如果不是用RAID或逻辑卷，所有的表都存放在一个磁盘设备上，无法发挥多磁盘并行读写的优势。
+这种情况下，可以利用操作系统的符号链接，将不同的数据库或表、索引指向不同的物理磁盘，从而达到分布磁盘I/O的目的。
+
+<2>将一个数据库指向其他物理磁盘
+方法是先在目标磁盘上创建目录，然后再创建从 MySQL数据目录到目标目录的符号链接：
+shell> mkdir /otherdisk/databases/test
+shell> ln -s /otherdisk/databases/test /path/to/datadir
+
+<3>将MyISAM(其他存储引擎的表不支持)表的数据文件或索引文件指向其他物理磁盘
+1)对于新建的表，可以通过在CREATE TABLE语句中增加DATA DIRECTORY和INDEX DIRECTORY选项来完成，例如：
+Create table test(id int primary key, Name varchar(20)) Type = myisam DATA DIRECTORY = '/disk2/data' INDEX DIRECTORY = '/disk3/index'
+
+2)对于已有的表，可以先将其数据文件（.MYD）或索引文件（.MYI）转移到目标磁盘，然后再建立符号连接即可。
+需要说明的是表定义文件（.frm）必须位于MySQL数据文件目录下，不能用符号连接。
+
+<4>在Windows下使用符号连接
+以上介绍的是Linux/UNIX下符号连接的使用方法，在Windows下，是通过在MySQL数据文件目录下创建包含目标路径并以“.sym”结尾的文本文件来实现的。
+例如，假设MySQL的数据文件目录是C:\mysql\data，要把数据库foo存放到D:\data\foo，可以按以下步骤操做：
+- 创建目录D:\data\foo；
+- 创建文件C:\mysql\data\foo.sym，并在其中输入D:\data\foo。
+这样在数据库foo创建的表都会存储到D:\data\foo目录下。
+
+注意：使用Symbolic Links存在一定的安全风险，如果不使用Symbolic Links，应通过启动参数skip-symbolic-links禁用这一功能。
+
+4、禁止操作系统更新文件的atime属性
+atime(access time)是Linux/UNIX系统下的一个文件属性，每当读取文件时，操作系统都会将读操作发生的时间回写到磁盘上。
+对于读写频繁的数据库文件来说，记录文件的访问时间一般没有任何用处，却会增加磁盘系统的负担，影响 I/O 的性能！
+因此，可以通过设置文件系统的mount属性，阻止操作系统写 atime 信息，以减轻磁盘 I/O 的负担。
+
+<1>在Linux下的具体做法是修改文件系统配置文件/etc/fstab，指定noatime选项：
+LABEL=/home /home ext3 noatime 1 2
+然后重新 mount 文件系统：
+mount -oremount /home
+完成上述操作，以后读/home下文件就不会再写磁盘了。
+
+5、用裸设备(Raw Device)存放InnoDB的共享表空间
+<1>MyISAM存储引擎有自己的索引缓存机制，但数据文件的读写完全依赖于操作系统，操作系统磁盘 I/O 缓存对 MyISAM 表的存取很重要。 
+
+<2>InnoDB存储引擎与 MyISAM 不同，它采用类似 Oracle 的数据缓存机制来 Cache 索引和数据，操作系统的磁盘 I/O 缓存对其性能不仅没有帮助，甚至还有反作用。
+因此，在 InnoDB 缓存充足的情况下，可以考虑使用 Raw Device 来存放 InnoDB 共享表空间。
+
+具体做法： //！！！待后续了解！！！
+1)修改MySQL配置文件，在innodb_data_file_path参数中增加裸设备文件名并指定newraw属性：
+......
+[mysqld]
+innodb_data_home_dir=
+innodb_data_file_path=/dev/hdd1:3Gnewraw;/dev/hdd2:2Gnewraw
+......
+
+2)启动MySQL，使其完成分区初始化工作，然后关闭MySQL。此时还不能创建或修改InnoDB表。
+
+3)将innodb_data_file_path中的newraw改成raw：
+......
+class=programlisting[mysqld]
+innodb_data_home_dir=
+innodb_data_file_path=/dev/hdd1:3Graw;/dev/hdd2:2Graw
+......
+
+4)重新启动即可开始使用。

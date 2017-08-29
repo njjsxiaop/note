@@ -1,0 +1,27 @@
+1、#define是预处理指令，在编译预处理时进行简单的替换，不作正确性检查，在编译已被展开的源程序时才会发现可能的错误并报错。
+例如：#define PI 3.1415926
+程序中的：area=PI*r*r 会替换为3.1415926*r*r
+如果你把#define语句中的数字9写成字母g预处理也照样带入。
+
+2、typedef是在编译时处理的。它在自己的作用域内给一个已经存在的类型一个别名。
+
+3、typedef int * int_ptr;与#define int_ptr int * 
+都是用int_ptr代表 int * ,但二者是不同的：
+<1>#define在预处理时进行简单的替换，而typedef不是简单替换，而是采用如同定义变量的方法那样来声明一种类型。
+1)#define int_ptr int *
+int_ptr a, b; //只是简单的宏替换，相当于int * a, b(a是int *，b是int)
+
+2)typedef int* int_ptr;
+int_ptr a, b; //a, b 都为指向int的指针,typedef为int* 引入了一个新的助记符
+
+3)上面打例子也说明了：
+typedef int * pint ;
+#define PINT int *
+于是有：
+const pint p ;//p不可更改，但p指向的内容可更改
+const PINT p ;//p可更改，但是p指向的内容不可更改
+pint是一种指针类型 const pint p 就是把指针给锁住了，因此p不可更改类；而const PINT p 是const int * p 锁的是指针p所指的对象。
+
+4、#define不是语句，因此不要在行末加分号。否则，会连分号一块置换。
+
+

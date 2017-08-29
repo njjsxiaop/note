@@ -1,0 +1,77 @@
+https://github.com/spf13/spf13-vim#customization
+
+1、install
+curl https://j.mp/spf13-vim3 -L > spf13-vim.sh && sh spf13-vim.sh
+or
+sh <(curl https://j.mp/spf13-vim3 -L)
+2、Updating to the latest version
+curl https://j.mp/spf13-vim3 -L -o - | sh
+3、配置文件
+<1> 配置文件执行顺序
+  1. .vimrc.before - spf13-vim before configuration
+  2. .vimrc.before.fork - fork before configuration
+  3. .vimrc.before.local - before user configuration
+  4. .vimrc.bundles - spf13-vim bundle configuration
+  5. .vimrc.bundles.fork - fork bundle configuration
+  6. .vimrc.bundles.local - local user bundle configuration
+  7. .vimrc - spf13-vim vim configuration
+  8. .vimrc.fork - fork vim configuration
+  9. .vimrc.local - local user configuration
+
+<2> 个性化
+.vimrc        //spf-13 vim配置
+.vimrc.local  //个性化vim配置
+或 .gvimrc.local
+
+<3> before文件
+.vimrc.before //spf-13的一些特殊配置，这些配置会在.vimrc之前被加载
+.vimrc.before.local //定义一些个性化配置，这些配置会在.vimrc之前被加载	
+
+<4> 定制文件
+.vimrc.fork
+.vimrc.bundles.fork
+
+<5> 编辑配置文件
+<Leader>ev //打开所有的配置文件（很多个tab页）      
+    <Leader>sv //使.vimrc文件立即生效，对当前打开的vim也生效      
+
+<C-E> //ctrl-e  // ,e
+    设置leader：   let mapleader = ','
+
+4、插件
+<1> 添加新插件
+-为新添加的插件创建配置文件 .vimrc.bundles.local 
+每个新插件只需要增加： 
+Bundle + vim.org project name / github username/github projectname
+eg   Bundle \'spf13/vim-colors\'     //github projectname
+
+-安装
+vim +BundleInstall! +BundleClean +q
+
+<2> remove/disabling插件
+-创建./vimrc.local,在其中添加要remove/disabling的插件。
+eg   UnBundle \'AutoClose\'           
+     UnBundle \'scrooloose/syntastic\'
+
+-清除
+:BundleClean
+
+<2> Undotree
+Undotree用于保存undo changes操作记录。
+- 调出   <Leader>u  /  <Leader>ut
+
+<3> NERDTree
+NERDTree是一个文件浏览器插件，提供了“project drawer”功能。
+- 帮助   :help NERDTree
+- 调出   <Leader>e  /  <Leader>nt
+- 切换   <C-E>
+
+<4> ctrlp
+ctrlp替代了Command-T插件。可以从文件系统中快速加载文件（正则表达式、模糊查找）。
+- 调出   <c-p>
+
+<5> surround
+操作括号、引号等包含的。
+
+<6> neocomplete
+自动补齐功能

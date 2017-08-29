@@ -1,0 +1,9 @@
+1、NSIS Error:Error writing temporary file. Make sure your temp folder is valid的解决
+cmd中执行：
+“icacls d:\ /setintegritylevel H”。(其中d代表出现问题的盘符)
+
+http://www.45it.com/windowszh/201407/37535.htm
+
+2、PC允许远程连接
+<1> 配置用户名密码
+<2> 计算机-属性-高级系统设置-远程 中设置

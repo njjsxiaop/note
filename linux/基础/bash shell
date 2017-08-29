@@ -1,0 +1,678 @@
+注意点：
+1、大小写敏感
+2、赋值语句不能出现空格
+3、反引号``允许将shell命令的输出赋给变量
+4、方括号 //使用$和方括号将数学表达式圈起来  $[operation]
+5、bash shell数学运算符只支持整数运算
+<1>最常见的解决方法是使用内建的bash计算器，bc，在shell提示符下通过bc命令访问
+   浮点运算是由内置scale变量控制的(默认值为0)，用于指定小数点后的位数
+   -q //屏蔽bc的欢迎条
+6、if-then语句只能判断退出状态码
+7、条件判断[ condition ]中括号里左右两个空格必须存在
+8、单引号里所有字符都保持原样传给命令；双引号里一些字符会有特殊含义
+   “$1”  '$1'
+9、$[]  //表达式结果 
+   $()  //命令结果
+   ``   //命令结果
+   ${变量名}或$变量名
+
+-------------------------------------------------------------------------------------------------------
+常见问题：
+1、shell  $'\r': command not found
+这是因为DOS换行符和UNIX换行符不同，可以通过dos2unix和unix2dos来互相转换：
+解决：<1>linux下安装dos2unix
+      <2>执行dos2unix *.sh
+
+-------------------------------------------------------------------------------------------------------
+//bash脚本常用命令
+1、dirname  //获取给定路径的目录部分
+eg：dirname /usr/bin/sort?
+/usr/bin
+2、basename //与dirname相反获取文件名部分
+3、readlink //获取脚本绝对路径
+
+使用readlink命令可以直接获取$0参数的全路径文件名，然后再用dirname获取其所在的绝对路径：
+SHELL_FOLDER=$(dirname $(readlink -f "$0"))
+echo ${SHELL_FOLDER}
+
+4、find文件类型
+-type:
+d 文件夹
+f 普通文件
+
+5、数据流重导向
+standard error (stderr)
+standard output (stdout)
+<1> 标准输入(stdin)：代码为0，使用<或<<
+    标准输出(stdout)：代码为1，使用>或>>
+    标准错误输出(stderr)：代码为2，使用2>或2>>
+注：0和1可以省略
+
+<2> /dev/null 代表空设备文件
+    2> /dev/null 即将错误消息丢弃
+
+<3> > list 2>&1 //表示标准输出和标准错误均输入到list中
+
+<4> > >> 
+当文件不存在时都会主动创建文件，区别是>会覆盖原文件内容;>>是将数据追加在末尾。
+
+<5> < << 
+<<用于设置输入结束符，如：cat > catfile << eof,
+[root@forimg make_test]#cat > test << eof
+> hello
+> stop
+> eof  //输入eof退出
+最终test文件中是hello
+                stop
+
+6、read  //读取来自键盘输入的变量
+read [-pt] 变量  //让用户给变量赋值
+-p :后面可以接提示字符
+-t :后面可以接等待的秒数
+
+7、head  
+head [-n number] 文档  //显示文档的前几行
+
+8、tr //字符转换
+tr [A-Z] [a-z] <<< "ABC"
+abc
+注：cmd <<< word? //把word(非文件)和后面的换行作为输入提供给cmd?
+
+
+
+二、符号
+0、shell脚本特殊符号
+http://www.cnblogs.com/xuxm2007/archive/2011/10/20/2218846.html
+
+1、花括号
+<1> ${a} 变量a的值，在不引起歧义的情况下可以省略花括号
+
+2、括号
+<1> $(cmd) 命令替换，和`cmd`效果相同，结果为shell命令cmd的输出
+<2> 命令组 (命令)
+在()中的命令列表，将作为一个子shell来运行；子shell中的变量，对于脚本其他部分是不可用的。
+a=123
+(a=321)
+echo "a=$a"  //a=123，()中的a像是一个局部变量
+<3>数组初始化
+Array=(element1,element2,element3...)
+
+2、`` //反引号、斜引号
+A=`ls -l` //把ls -l的结果赋给A，ls -l作为命令来执行
+所有命令要取结果或输出，都要用$()或``
+
+3、空格
+<1> 定义变量时，=两边不能留空格
+(空格非常重要，shell 会认为空格前的为一个命令，如果a=3 认为是赋值操作，如果写成a = 3，那么就会认为a为一个命令)
+
+4、字符串匹配处理  http://blog.csdn.net/xuhongning/article/details/6191515
+/******************************/
+$0 //参数0引用启动bash的程序的名称   ./make_test/a.sh  、  ./a.sh
+$1/$2/$3  //第几个参数
+$* //从$1开始的所有参数
+$@ //从$1开始的所有参数
+$# //参数数量(不包括参数0)
+/******************************/
+<1>字符串长度
+${#var} 表示$var的长度
+${#2} 表示脚本第二个参数的长度
+${#@} 表示脚本所有参数的个数，等效于$#
+
+<2>字符串的前后截取，pattern一般是个命令行glob，匹配的即为被去掉的字符：
+${var#pattern} 最短头匹配截取
+${var##Pattern} 最大头匹配截取
+${var%Pattern} 最短尾匹配截取
+${var%%Pattern} 最大尾匹配截取
+
+5、数组
+<1>echo "${array[@]}" //获取所有数组元素的值(加上双引号，每条换行显示)
+<2>echo ${#array[@]}  //显示数组是否有元素，若有显示1、若无显示0
+<3>echo ${#array[n]}  //显示数组中某个元素的长度
+
+
+八、退出脚本
+1、退出状态码
+shell中运行的每个命令都使用退出状态码(exit status),它是一个0-255之间的数字。成功结束的命令退出状态码为0，如果命令结束错误，退出状态码为一个正数值。
+<1> $? 用于保存上个执行命令的退出状态码 (echo $?)
+
+2、exit命令
+<1>默认情况下，shell脚本以脚本中的最后一个命令的退出状态码退出。
+<2>exit命令允许在脚本结束时指定一个退出状态码。
+<3>退出状态码最大是255，如果超过，shell会通过模运算(x%256)得到结果。如exit 300，实际退出状态码为44。
+<4>使用if-then语句检查某个命令返回的错误状态，以便知道命令是否成功。
+
+九、使用结构化命令
+1、使用if-then语句
+if command
+then
+commands
+fi
+
+if command; then
+commands
+fi
+bash shell的if语句会运行if行定义的那个命令，如果该命令的退出状态码是0，执行then部分的命令；否则不执行then部分的命令。
+
+2、test命令
+test condition
+<1>if-then语句只能测试命令的退出状态码条件。test命令提供了在if-then语句中测试其他条件的途径。
+<2>如果test命令中列出的条件成立，test命令就会退出并返回退出状态码0；否则test命令返回退出状态码1。
+if test condition
+then
+commands
+fi
+<3>bash shell提供了另一种在if-then中声明test的方法：方括号定义了test命令中用到的条件。
+if [ condition ] //注意，必须condition两边加上空格，否则报错！！！
+then
+commands
+fi
+<4>test命令可以判断 数值/字符串/文件
+1)数值比较  //可以用于数字和变量
+-eq  相等
+-ge  大于等于
+-gt  大于
+-le  小于等于
+-lt  小于
+-ne  不等于
+注：test命令无法处理浮点数，能处理的数仅有整数。
+
+2)字符串比较  
+=         相同
+!=        不同
+<         小
+>         大
+-n str1   str1的长度是否非0
+-z str1   str1的长度是否为0
+注：<1>test比较字符串考虑标点和大小写。
+    <2> > 和 < 必须转义，否则shell会把它们当做重定向符号
+    <3> > 和 < 顺序和sort命令所采用的不同(sort命令处理大写字母的顺序与test正好相反)
+        test命令使用标准的ASCII顺序，大写字母小于小写字母；sort使用的是系统本地化语言设置中定义的排序顺序。
+    <4> 空的和未初始化的变量对shell脚本测试来说可能有灾难性的影响，如果不确定一个变量的内容，最好字符串比较中使用-z\-n
+测试下变量是否含有值。
+
+3)文件比较  //测试linux文件系统上的文件和目录状态
+-d file   file是否存在且为一个目录
+-e file   file是否存在
+-f file   file是否存在且为一个文件
+-r file   file是否存在且可读
+-s file   file是否存在且非空
+-w file   file是否存在且可写
+-x file   file是否存在且可执行
+-O file   file是否存在且属于当前用户
+-G file   file是否存在且默认组与当前用户相同
+file1 -nt file2   file1是否比file2新
+file1 -ot file2   file1是否比file2旧   
+
+3、复合条件测试
+[ condition1 ] && [ condition2 ]  //都成立
+[ condition1 ] || [ condition2 ]  //至少一个成立
+
+4、if-then的高级特性
+<1>用于高级数学表达式的双尖括号  (( expression ))
+可以在if语句中使用双尖括号，也可以在脚本中的普通命令中使用来赋值
+除了test命令中使用的标准数学运算符，双尖括号还支持：
+val++       后增  
+val--       后减
+++val       先增
+--val       先减
+&&          逻辑和
+||          逻辑与
+!           逻辑非
+&           位与
+|           位或
+~           位非
+**          幂运算
+<<          左移位
+>>          右移位
+注：不需要将双尖括号中表达式里的大于号转义。
+    这里只能使用 > <等符号来比较，不能用-gt等
+
+
+<2>用于高级字符串处理功能的双方括号  [[ expression ]]
+双括号中的expression使用test命令中采用的标准字符串进行比较。但他提供了test命令未提供的另一个特性--模式匹配
+模式匹配中可以定义一个正则表达式来匹配字符串值。
+
+5、case命令
+case 变量 in
+val1 | val2) command1;;      //使用|在一行列出多个模式
+val3) command2;; 
+*)default commands;;          //*捕获所有其他值
+esac
+
+注：表达式取值要用$[]
+[root@forimg make_test]#varl=10
+[root@forimg make_test]#echo $[ $varl - 1 ]
+9
+[root@forimg make_test]#echo ($varl - 1)  
+-bash: syntax error near unexpected token `$varl'
+[root@forimg make_test]#echo [ $varl - 1 ]
+[ 10 - 1 ]
+
+
+
+
+十、更多结构化命令
+1、for命令
+for var in list
+do 
+commands
+done
+
+for var in list; do
+commands
+done
+
+<1>更改字段分隔符
+1)环境变量IFS(内部字段分隔符)，定义了bash shell用作字段分隔符的一系列字符。默认情况下的字段分隔符有：空格/制表符/换行符
+  如果bash shell在数据中看到了这些字符中的任意一个，会认为列表中开始了一个新的数据段。
+2)shell脚本中临时更改IFS
+
+2、C语言风格的for命令
+for (( a = 1; a < 10; a++ ))
+<1>与bash shell不同的地方：
+-给变量赋值可以有空格；
+-条件中的变量不以$开头
+-迭代过程的算式未用expr命令格式
+
+<2>多个变量
+for (( a=1, b=10; a <= 10; a++, b-- ))
+do
+...
+done
+
+3、while命令
+while test command
+do
+other commands
+done
+while中的test命令和if-then语句中是一样的。
+varl=10
+while [ $var1 -gt 0 ]
+do
+echo $varl
+varl=$[ $varl - 1 ]
+done
+
+4、until命令
+
+5、循环控制
+<1>break命令 退出任意类型的循环包括while和until循环；
+   在处理多个循环时，break命令会自动终止所在最内层的循环；
+   break n //在内部循环，但需要停止外部循环时，其中n说明了要跳出的循环层级。默认情况下n为1,表明跳出当前循环。
+       
+<2>continue命令 提早结束本次执行循环内部的命令但并不终止循环
+
+6、处理循环的输出
+<1> 重定向
+for var in ***
+do
+。。。
+done > output.txt    //shell会将for命令的结果重定向到文件output.txt中
+
+<2> 管道
+for var in ***
+do
+。。。
+done | sort
+
+十一、处理用户输入
+1、命令行参数
+<1>读取参数 
+参数位置：
+$0 程序名
+$1 参数1
+$2 参数2
+。。。依次类推直到参数9
+${10}
+${11}
+。。。
+
+<2>测试参数
+[ -n $1 ]
+
+2、特殊参数变量
+<1>参数计数
+1)$# //命令行参数的个数   可用于测试输入的命令行参数个数是否正确
+2)$#与!#  //均代表最后一个命令行参数
+不能在{}中使用$
+当参数个数为0时，$#的值为0,!#的值为脚本名(即为$0)
+
+<2>抓取所有的数据
+$*和$@  //提供了对所有参数的快速访问
+    $*会将命令行上的所有参数作为一个参数保存(多个参数，循环打印时，只会打印出一个整体值)
+    $@会将命令行上的所有参数作为多个独立参数保存(多个参数，循环打印时，会打印出多个值)
+
+3、移动变量 shift
+<1>bash shell提供了shift命令来帮助操作命令行参数，它会根据相对位置来移动命令行参数。
+<2>使用shift命令时，默认情况下它会将每个参数变量减1,变量$3的值会移到$2,变量$2的值会移到$1,变量$1的值会被删除。($0的值不会改变！)
+eg：
+while[ -n "$1" ]  //当第一个参数的长度为0时，循环结束
+do
+...
+shift
+done
+测试第一个参数后，shift命令会将所有参数的位置移动一位。
+<3>shift n //n为想要移动的位数
+<4>使用shift命令时需要注意，当一个参数被移除后，它的值会被丢掉并且无法恢复。
+
+4、处理选项
+<1>查找选项
+<2>getopt命令
+
+5、将选项标准化
+
+6、获得用户输入 read
+<1>基本的读取
+echo -n "Enter your name: "    //-n会去掉字符串末尾的换行符，允许脚本用户紧跟其后输入数据，而不会换行
+read name
+echo "Hello $name!"
+
+1)read -p "..." 变量
+read命令会为提示符输入的所有数据分配一个或多个变量。
+当指定多个变量时，输入的每个数据值会依次分配给read指定的每一个变量，最终多余的数据会全部分配给最后一个变量。
+2)read不指定变量时，会将收到的所有数据都放进特殊环境变量REPLY中
+
+<2>超时
+1) 计时
+read -t  //对输入过程计时，指定read命令等待输入的秒数；当计数器过期后，read命令会返回一个非零退出状态码。
+2) 计数
+read -n  //对输入字符计数，当输入字符达到预设的字符数时，read自动退出，并将数据赋给变量
+read -n1 //接收单个字符后退出
+
+<3>隐藏方式读取
+-s选项会阻止将传给read命令的数据显示出来（实际上会显示，只是read命令会将文件颜色和背景设置成一样）
+
+
+注：-s和-n1 选项都要在-p之前出现
+
+
+第14章 呈现数据
+一、理解输入和输出
+1、标准文件描述符
+linux将每个对象当做文件来处理，包括输入和输出的过程。linux用文件描述符(非负整数，唯一标识会话中打开的文件)来标识每个文件对象。
+<1>最早的3个文件描述符0、1、2，用以处理脚本的输入和输出
+   0  STDIN  标准输入(键盘)    //输入重定向符号 < 
+   1  STDOUT 标准输出(显示器)  //输出重定向符号 >>(追加)  >(覆盖)
+   2  STDERR 标准错误(显示器)
+注：文件描述符和重定向符号必须紧挨着，不能有空格。eg   2>  1>>
+
+<2>重定向错误
+1) 2> test6 1> test7
+2) &> test7  //表示将1和2同时输出到test7中，此时bash shell会将2的消息优先保存在文档的前部分
+
+2、在脚本中重定向输出
+<1>临时重定向  //单处
+   echo "..." >&2   //将文本显示在脚本的STDERR文件描述符所指向的任何位置
+
+eg：
+   echo "this is error!" >&2
+   echo "this is normal."
+[root@forimg make_test]#./shelltest.sh 2> test0
+this is normal.
+[root@forimg make_test]#cat test0 
+this is error!
+
+<2>永久重定向  //整个脚本
+exec 1> testout
+
+3、在脚本中重定向输入
+exec 0< testfile //该命令告诉shell从文件中获得输入，而不是STDIN。当脚本需要输入时，该重定向就会起作用，如read命令。
+
+4、创建自己的重定向
+shell中最多可以有9个打开的文件描述符。0-8
+
+5、列出打开的文件描述符
+lsof命令
+-p  //指定PID(进程ID)    $$表示当前PID
+-d  //指定要显示的文件描述符个数
+-a  //对其他两个选项的结果执行逻辑AND运算
+lsof -a -p $$ -d 0-2
+COMMAND   PID USER   FD   TYPE DEVICE SIZE/OFF NODE NAME
+bash    14114 root    0u   CHR  136,0      0t0    3 /dev/pts/0
+bash    14114 root    1u   CHR  136,0      0t0    3 /dev/pts/0
+bash    14114 root    2u   CHR  136,0      0t0    3 /dev/pts/0
+
+6、阻止命令输出
+null文件(/dev/null) //输出到null文件的任何数据都不会保存
+<1>快速移除现有文件中的数据,而不需要删除在重建文件
+cat /dev/null > testfile
+[root@forimg make_test]#cat < /dev/null > 123
+[root@forimg make_test]#cat < 123
+[root@forimg make_test]#
+
+7、创建临时文件
+linux使用/tmp目录来存放临时文件，大多数linux发行版配置了系统在启动时自动删除/tmp目录的所有文件。
+<1>创建本地临时文件
+默认情况下mktemp命令会在本地创建临时文件
+mktemp testing.XXXXXX //可以指定文件名模板
+[root@forimg tmp]#mktemp 123XXXXXX
+123NjS9Kn
+
+<2>在/tmp目录创建临时文件
+-t //强制mktemp命令在/tmp目录创建临时文件
+[root@forimg make_test]#mktemp -t 123XXXXXX
+/tmp/1234a89N6
+
+<3>创建临时目录
+-d //创建一个临时目录
+[root@forimg make_test]#mktemp -d 123XXX
+123lz0
+
+8、记录消息
+tee命令相当于管道的T型接头，它将从STDIN过来的数据同时发送给两个目的地，一个是STDOUT，一个是tee命令所指定的文件。
+注：默认情况下，tee命令会在每次使用时覆盖输出文件的内容。可以使用-a，将数据追加到文件中。
+
+第15章 控制脚本
+运行脚本的方式：实时模式、。。。
+1、处理信号
+linux通过信号进行进程间通讯。通过对脚本进行编程，使其在收到linux系统的特定信号时执行特定的命令。
+<1>重温linux信号
+1     SIGHUP   挂起进程          //shell会退出，退出前将SIGHUP信号传给shell启动的所有进程
+2     SIGINT   终止进程          //中断shell，linux内核会停止将CPU处理时间分配给shell，shell会将SIGINT信号传给shell启动的所有进程
+3     SIGQUIT  停止进程
+9     SIGKILL  无条件终止进程
+15    SIGTERM  可能的话终止进程
+17    SIGSTOP  无条件停止进程，但不终止
+18    SIGTSTP  停止或暂停进程，但不终止
+19    SIGCONT  继续运行停止的进程
+默认情况下，bash会忽略收到的3和15信号
+            bash会处理收到的1和2信号
+shell会将这些信号传递给shell脚本来处理，可以在脚本中加入识别信号和处理信号结果的命令。
+
+<2>产生信号
+1)终止进程
+ctrl+c会产生SIGINT信号
+2)暂停进程
+ctrl+z会产生SIGTSTP信号 //停止shell中运行的任何进程
+停止一个进程跟终止一个进程不同，停止进程会让程序继续保留在内存中，并能从上次停止的位置继续运行
+[root@forimg make_test]#sleep 1000
+^Z
+[1]+  Stopped                 sleep 1000
+方括号中的数字是shell分配的作业号，将shell中运行的每个进程称为作业，并为每个作业分配一个唯一的作业号。第一个为1，第二个为2，以此类推。。
+
+<3>捕捉信号
+trap命令指定shell脚本要观察哪些linux信号并从shell中拦截
+trap commands signals
+eg:
+trap "echo 'I hava tarpped ctrl-c!'" SIGINT SIGTERM
+
+for (( i=1; i<=10; i++))
+do 
+    echo "Loop #$i"
+    sleep 5
+done
+
+[root@forimg make_test]#./shelltest.sh 
+Loop #1
+Loop #2
+^CI hava tarpped ctrl-c!
+Loop #3
+Loop #4
+^CI hava tarpped ctrl-c!
+Loop #5
+...
+每次使用ctrl+c，脚本都会执行trap命令中指定的echo语句。
+
+<4>捕捉脚本的退出
+除了在shell脚本中捕捉信号，也可以在shell脚本退出时捕捉它们。这是在shell完成任务时执行命令的简单方法。
+trap "echo byebye" EXIT //EXIT捕捉即使提前ctrl-c退出脚本也会被触发
+
+<5>移除捕捉
+trap - 信号
+eg   tarp - EXIT SIGINT SIGTERM
+
+2、后台模式运行脚本
+后台模式中，进程运行时不会和终端会话上的STDIN、STDOUT、STDERR关联
+<1>后台运行脚本
+命令后加&符号  //此种后台运行方式，仍会和中断会话上的STDIN、STDOUT、STDERR关联
+
+<2>运行多个后台作业
+
+<3>退出终端
+每个后台进程都绑定到了该终端会话的终端上(如pts/0),如果终端会话退出，后台进程也会退出。
+
+3、在非控制台下运行脚本
+1) nohup命令 在终端会话中启动shell脚本，然后让脚本一直以后台模式运行，直到完成(即使提前退出了终端会话)。
+eg   nohup ./test1 &
+2) nohup命令运行时，如果关闭终端会话，脚本会忽略任何终端会话发过来的SIGHUP信号。
+3) nohup命令从终端解除终端会话的关联，终端会话会丢掉STDOUT和STDERR的链接。nohup会自动将STDOUT和STDERR重定向到一个名叫nohup.out的文件中。
+4) nohup执行脚本时，输出会追加到现有的nohup.out文件中；同目录中的多个命令会输出到同一个nohup.out文件中。
+
+4、作业控制
+<1>查看作业
+jobs //允许查看shell当前正在处理的作业
+-l 列出进程的PID以及作业号
+-n 只列出上次shell发出的通知后改变状态的作业
+-p 只列出作业的PID
+-r 只列出运行中的作业
+-s 只列出停止的作业
+注：jobs命令显示的带加号的作业会被当做默认作业，在使用作业控制命令时，如果未指定作业号，会操作该默认作业；
+    任何时候都只有一个带加号的作业和一个带减号的作业。
+
+<2>重启停止的作业
+可以将已停止的作业作为后台进程或前台进程重启，前台进程会接管当前终端会话。
+1)以后台模式重启一个作业： 
+bg 作业号
+2)以前台模式重启一个作业：
+fg 作业号
+
+5、调度谦让度
+在多任务操作系统中，内核负责将CPU时间分配给系统上运行的每个进程。同一时刻只有一个进程可以占据CPU，内核将CPU时间轮流分配给这些进程。
+默认情况下，从shell启动的所有进程都有同样的调度优先级。
+调度优先级是内核分配给该进程的相对于分配给其他进程的CPU时间总量。它是一个整数，从-20(最高)到20(最低)
+默认情况下，shell以优先级0来启动所有进程。
+
+<1>nice命令
+nice -n 优先级 命令
+启动时调整一个命令的调度优先级。
+
+<2>renice命令
+renice 优先级 -p PID
+改变系统上已经运行命令的优先级。
+1)普通用户只能对属于你的进程执行renice
+2)普通用户只能通过renice降低进程优先级
+
+6、定时运行作业
+<1>用at命令来计划执行作业
+at命令允许用户指定系统何时运行脚本，at会将作业提交到队列中，指定shell何时运行该作业。
+at的守护进程atd会以后台模式运行，并检查作业队列(job queue)。大多数linux发行版会在开机时启动该守护进程。
+1)at [-f filename] time
+-f   指定读取命令(脚本)的文件名
+time 指定系统何时运行该作业(指定时间、日期、时间增量)  
+     10:15  10:15~PM  now  noon  midnight  teatime(4~PM)
+     MMDDYY  MM/DD/YY  DD.MM.YY  Jul 4   Dec 25
+     +25min  10:15 + 7天
+
+2)针对不同的优先级，存在26个不同的作业队列(通常用小写字母a~z来引用，a的优先级最高)
+  at -q 指定不同的作业队列
+
+3)获取作业的输出
+linux系统会将提交该作业的用户的E-mail地址作为STDOUT和STDERR。
+eg：
+echo "this script will run at `date`"
+echo "this is the end of the script" >&2
+[root@forimg make_test]#at -f shelltest.sh now+1min
+job 1 at Wed Nov  2 10:48:00 2016
+
+-m 即使没有输出消息，也会生成邮件
+
+4)列出等待的作业
+atq 命令
+[root@forimg make_test]#at -f shelltest.sh midnight
+job 4 at Thu Nov  3 00:00:00 2016
+[root@forimg make_test]#atq
+4       Thu Nov  3 00:00:00 2016 a root
+作业号       执行该作业的日期 所在的作业队列   所属用户      
+
+4)删除作业
+atrm 作业号
+
+<2>计划定期执行脚本
+cron程序会在后台运行并检查cron时间表，来获得计划执行的作业。
+1)cron时间表
+min  hours  dayofmonth  month  dayofweek  command
+            1~31              0~6/mon\tue...
+15 10 * * * command //每天10:15执行命令
+15 16 * * 1 command //每周一16:15执行命令
+
+2)构建cron时间表
+每个系统用户都有自己的cron时间表，crontab命令用来处理cron时间表。
+crontab -l  //列出已有的cron时间表
+crontab -e  //在cron时间表中添加条目
+
+3)cron目录
+当创建的脚本不要求有精确的执行时间时，可以用预配置的cron脚本目录。
+/etc/cron.hourly  cron.daily  cron.monthly  cron.weekly
+eg：需要每天运行一次的脚本，只要将其复制到daily目录，cron就会每天执行它。
+
+4)anacron程序
+- cron程序假设linux系统是一直运行的，但如果linux系统关闭，可能会错过一些作业。anacron用于解决该问题。
+- 如果anacron知道作业错过了计划好的运行，它会尽快运行该作业。
+- anacron程序只会处理位于cron目录的程序。它用时间戳来决定作业是否在适当的时间间隔内运行了。每个cron目录都有个时间戳文件。/var/spool/anacron
+- anacron程序有自己用来检查作业目录的表 /etc/anacrontab
+- anacron不会运行位于/etc/cron.hourly的脚本，anacron程序不会处理执行时间需求小于一天的脚本。
+
+7、启动时运行
+linux系统开机或用户启动一个新的bash shell终端会话时自动运行。
+<1>开机时运行脚本
+1)开机过程
+linux内核加载到内存中并运行
+开始UNIX System V init过程 或 Upstart init过程
+启动其他所有进程
+
+第十六章 创建函数
+function name{
+commands
+}
+
+name(){
+commands
+}
+
+1) 函数名必须唯一，否则后面定义的函数会覆盖之前定义的函数，但不会产生任何错误消息。
+2) 函数结束时会返回一个退出状态码。
+   默认是函数中最后一条命令返回的退出状态码。
+   return命令退出函数并返回特定的退出状态码。(退出状态码在0~255之间，任何大于255的值都会返回一个错误值)
+   
+1、在函数中使用变量
+函数名 $0
+参数1  $1
+参数2  $2
+。。。
+$#参数数目
+1)尽管函数参数也用$1\$2表示，但却和脚本变量$1/$2不同，要在函数中使用这些值，必须在调用函数时手动将他们传递过去。
+
+2、在函数中处理变量
+变量的作用域：
+    全局：shell脚本中任何地方都有效。默认情况下，脚本中定义的任何变量都是全局变量。函数外定义的变量可在函数内正常访问。
+    局部：函数内部使用的任何变量都可以被声明为局部变量。(local 限定符，保证变量只局限在该函数中，如果该函数外部有同样名字的变量，shell将会保证这两个变量的值是分离的。)
+
+3、创建库
+source/.
+
+4、在命令行上使用函数
+<1>在命令行上定义函数   //退出shell时函数就会消息
+;或换行
+
+<2>在.bashrc文件中定义函数
+

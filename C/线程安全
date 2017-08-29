@@ -1,0 +1,16 @@
+1、库函数localtime不是线程安全的
+http://blog.csdn.net/stpeace/article/details/24440329
+http://blog.sina.com.cn/s/blog_bef71f540101ol4d.html
+struct tm *localtime(const time_t *timep);
+<1>localtime函数的返回值是指向结构体tm的指针。
+如果是一个非静态的局部变量，返回它的地址是错误的做法，因为非静态的局部变量在函数返回时，已经被销毁了，它的地址成为无用的地址。
+因此localtime函数返回的指针只有以下三种可能：要么是一个静态变量的地址，要么是一个全局变量的地址，或者是使用malloc等函数在堆上分配的空间。
+
+1)对于第三种可能，因为标准并没有规定可以对localtime返回的地址进行free，所以如果localtime函数是使用malloc函数分配空间的话，
+程序员不会使用free函数去释放它，因此造成内存泄露，证明不是第三种情况。
+
+2)对于前两种可能，这样的变量在多线程访问时会出问题，第一个线程在localtime返回之前首先改变了这个变量的值，
+第二个线程又进来改变这个变量，以此类推。这样第一个线程在真正返回时该值已经被多次改变，这是典型的函数重入问题。
+
+<2>VC下localtime_s函数来取代localtime函数;Linux下localtime_r函数取代localtime函数。它们都是线程安全的，可重入。
+struct tm *localtime_r(const time_t *timep, struct tm *result);

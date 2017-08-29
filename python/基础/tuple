@@ -1,0 +1,44 @@
+一、基本介绍
+1、另一种有序列表叫元组(tuple)，与list非常类似。
+<1>tuple编写在圆括号中。
+<2>tuple一旦初始化就不能修改。
+
+2、因为tuple不可变，所以代码更加安全。因此，尽量使用tuple代替list。
+
+3、tuple在定义时，元素必须被确定。
+<1>定义一个空的tuple
+>>> t=()  //ok
+>>> t[0]=1
+Traceback (most recent call last):
+  File "<stdin>", line 1, in <module>
+TypeError: 'tuple' object does not support item assignment
+
+<2>定义只有一个元素的tuple
+>>> t = (1,) //必须加逗号，否则定义的是数字1。
+这是因为()既可以表示tuple，也可以表示算术中的括号。python规定，这种情况下认为是小括号。
+因此必须加逗号来区别。
+
+4、定义一个"可变的"tuple
+>>> t = ('a', 'b', ['A', 'B'])
+>>> t[2][0] = 'X'
+>>> t[2][1] = 'Y'
+>>> t
+('a', 'b', ['X', 'Y'])
+
+解释：
+表面上看，tuple的元素确实变了，但其实变的不是tuple的元素，而是list的元素。tuple一开始指向的list并没有改成别的list。
+所以，tuple所谓的“不变”是说tuple的每个元素的指向永远不变。
+即指向'a'，就不能改成指向'b'，指向一个list，就不能改成指向其他对象，但指向的这个list本身是可变的！
+
+理解了“指向不变”后，要创建一个内容也不变的tuple怎么做？那就必须保证tuple的每一个元素本身也不能变。
+
+二、tuple的方法
+python 3.X中元组的两个专有调用方法：
+1、T.index(4) //4出现的偏移位置
+>>> a=(4,5,6,7)
+>>> a.index(4)
+0
+
+2、T.count(4) //4出现几次
+>>> a.count(5)
+1

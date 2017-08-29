@@ -1,0 +1,76 @@
+1、find 路径 选项 ACTION
+	find /home -type d -ls //查找/home目录下的所有文件夹，并列出
+	// .表示当前路径
+	
+2、选项
+<1>-name   直接加文件名，且支持文件名通配
+   -iname  类似与-name，但是匹配文件名时不区分大小写
+   -regex  正则表达式匹配文件名   
+   
+eg：
+    find . -name "vim*" -ls   //查找当前目录下所有以vim开头的文件,并显示其详细信息 
+	find . -iname "vim*" -ls  //查找当前目录下所有以vim开头的文件(不区分大小写),并显示其详细信息
+	
+<2>按文件类型查找
+-type 文件属性
+	d: 目录
+	f: 普通文件
+	l: 链接文件(link)
+	s: socket文件
+	p: 管道文件(pipe)
+	b: 块设备文件
+	c: 字符设备文件
+	
+eg：
+	find . -type d -ls   //显示当前目录下所有的目录的详细信息 
+	find . -type l -ls   //显示当前目录下所有的链接文件的详细信息
+	
+<3>按文件所属组/owner查找
+-gid GID
+-uid UID
+-user USER
+-group GROUP
+-nouser
+-nogroup
+
+eg：
+	find . -user root -ls   //显示当前目录下属于root的所有的文件的详细信息
+	
+<4>按文件大小查找
+size [+,-][b,k,M,G]
+
+eg：
+	find . -type f -size +1k -ls  //显示当前目录下所有大于1k的普通文件的详细信息
+	
+<5>组合查找
+-a: and 
+-o: or 
+-not:
+
+eg：
+	find . -type d -o -type l -ls   //显示当前目录下所有目录和链接文件的详细信息
+
+
+3、action
+-print: 显示
+-ls：类似ls -l的形式显示每一个文件的详细
+-quit: 查找到一个就退出
+-delete: 删除匹配到的行
+-ok COMMAND {} \; 每一次操作都需要用户确认,{}表示引用找到的文件,是占位符
+-exec COMMAND {} \; 每次操作无需确认
+
+eg：
+	find . -type d -delete  //删除当前目录下的所有目录 
+	find . -type f -ok wc -l {} \;   //找出当前目录下所有的普通文件并显示文件行数(需确认) 
+	find . -type f -exec wc -l {} \;   //找出当前目录下所有的普通文件并显示文件行数(无需确认)
+
+4、查看大文件
+<1>大文件
+find . -type f -size +800M  
+find . -type f -size +800M -print0 | xargs -0 du -h  //不加-print0，不会换行，杂乱在一起
+find . -type f -size +800M -print0 | xargs -0 du -h | sort -nr
+
+<2>大目录
+du -h --max-depth=1
+du -h --max-depth=2 | sort -n
+du -hm --max-depth=2 | sort -nr | head -12

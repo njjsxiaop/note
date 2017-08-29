@@ -1,0 +1,48 @@
+1、ULR  ULRConnection
+获取URL连接的常见方法
+方法一：
+URL url = new URL("http://www.swiftlet.net/");
+URLConnection urlcon = url.openConnection();
+InputStream is = urlcon.getInputStream();
+方法二：
+URL url = new URL("http://www.swiftlet.net/");
+HttpURLConnection urlcon = (HttpURLConnection)url.openConnection();
+InputStream is = urlcon.getInputStream();
+方法三：
+URL url = new URL("http://www.swiftlet.net/");
+InputStream is = url.openStream();
+
+2、BufferedReader
+BufferedReader它可以包装字符流，拥有8192字符的缓冲区，将字符流放入缓存里，先把字符读到缓存里，到缓存满了或者你flush的时候，再读入内存，就是为了提供读的效率而设计的。
+
+判空：
+//结果每行的第一个字符都没有显示出来，原因：(temp=bf.read())!=-1 每次都会先读取一个字节出来，所以后面的bf.readLine()读取的就是每行少一个字节.
+FileReader fr = new FileReader("D:\\Test.txt");
+BufferedReader bf = new BufferedReader(fr);
+ 
+int temp;
+while ((temp = bf.read()) != -1){
+    System.out.println(bf.readLine());
+}
+
+//
+String msg = null;
+   while ((msg=bf.readLine())!=null){
+    System.out.println(msg);
+   }
+   
+3、Scanner类
+用于扫描输入文本
+public static void main(String[] args) { 
+    System.out.println("请输入值，以回车结束："); 
+    Scanner sc = new Scanner(System.in); 
+    sc.useDelimiter("\n"); 
+    while (sc.hasNext()) { 
+        String s = sc.next(); 
+        System.out.println("获取值："+s); 
+    } 
+} 
+
+-用Scanner类封装system.in输入流
+-sc.userDelimiter("\n");设置输入结束的标志，此外以回车结束。
+-用sc.hasNext()判断是否有内容，有则用sc.next()取出

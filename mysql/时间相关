@@ -1,0 +1,165 @@
+http://www.cnblogs.com/ggjucheng/p/3352280.html
+
+1、获取当前日期、时间
+<1> now()
+mysql> select now();
++---------------------+
+| now()               |
++---------------------+
+| 2017-07-07 23:25:11 |
++---------------------+
+1 row in set (Elapsed: 00:00:00.00)
+
+<2> current_timestamp、current_timestamp() //当前时间戳
+mysql> select current_timestamp();
++---------------------+
+| current_timestamp() |
++---------------------+
+| 2017-07-07 23:38:54 |
++---------------------+
+1 row in set (Elapsed: 00:00:00.00)
+
+mysql> select current_timestamp;  
++---------------------+
+| current_timestamp   |
++---------------------+
+| 2017-07-07 23:38:55 |
++---------------------+
+1 row in set (Elapsed: 00:00:00.00)
+
+<3> sysdate()
+与now()类似，不同之处在于：now()在执行开始时获得结果；sysdate()在函数执行时动态获得结果。
+mysql> select now(), sleep(3), sysdate();
++---------------------+----------+---------------------+
+| now()               | sleep(3) | sysdate()           |
++---------------------+----------+---------------------+
+| 2017-07-07 23:41:19 |        0 | 2017-07-07 23:41:22 |
++---------------------+----------+---------------------+
+1 row in set (Elapsed: 00:00:03.00)
+
+2、日期、时间转换函数
+<1> date_format(date,format) 	//将日期格式转换为指定格式的字符串
+mysql> select date_format('2008-08-08 22:23:01', '%Y%m%d%H%i%s');
++----------------------------------------------------+
+| date_format('2008-08-08 22:23:01', '%Y%m%d%H%i%s') |
++----------------------------------------------------+
+| 20080808222301                                     |
++----------------------------------------------------+
+1 row in set (Elapsed: 00:00:00.00)
+
+<2> str_to_date(str,format) 	//指定格式的字符串转化为日期格式
+mysql> select str_to_date('08.09.2008 08:09:30', '%m.%d.%Y %h:%i:%s');
++---------------------------------------------------------+
+| str_to_date('08.09.2008 08:09:30', '%m.%d.%Y %h:%i:%s') |
++---------------------------------------------------------+
+| 2008-08-09 08:09:30                                     |
++---------------------------------------------------------+
+1 row in set (Elapsed: 00:00:00.00)
+
+<3> makdedate(year,dayofyear), maketime(hour,minute,second) //拼凑日期、时间
+gbase> select makedate(2001,31);
++-------------------+
+| makedate(2001,31) |
++-------------------+
+| 2001-01-31        |
++-------------------+
+1 row in set (Elapsed: 00:00:00.00)
+
+gbase> select makedate(2001,32);
++-------------------+
+| makedate(2001,32) |
++-------------------+
+| 2001-02-01        |
++-------------------+
+1 row in set (Elapsed: 00:00:00.00)
+
+gbase> select maketime(20,22,10); 
++--------------------+
+| maketime(20,22,10) |
++--------------------+
+| 20:22:10           |
++--------------------+
+1 row in set (Elapsed: 00:00:00.00)
+
+3、日期、时间计算函数
+<1>给日期增加一个时间间隔：data_add()
+mysql> select date_add(now(), interval 1 day);   
++---------------------------------+
+| date_add(now(), interval 1 day) |
++---------------------------------+
+| 2017-07-09 00:00:44             |
++---------------------------------+
+1 row in set (Elapsed: 00:00:00.00)
+
+gbase> select date_add('2017-08-10', interval 1 day);     
++----------------------------------------+
+| date_add('2017-08-10', interval 1 day) |
++----------------------------------------+
+| 2017-08-11                             |
++----------------------------------------+
+1 row in set (Elapsed: 00:00:00.00)
+
+select date_add(date, interval num day/hour/minute/second/microsecond/week/month/quarter/day);
+//给日期加上一个任意时间间隔。 
+interval '01:15:30' hour_second
+interval '1 01:15:30' day_second 
+
+<2>给日期减去一个时间间隔：date_sub()  //和 date_add() 用法一致
+
+<3> datediff(date1,date2), timediff(time1,time2) //日期、时间相减
+select datediff('2008-08-08', '2008-08-01'); -- 7
+select datediff('2008-08-01', '2008-08-08'); -- -7
+
+4、eg：
+<1> 获取19980101前一周的结果
+select * from notice_rcp_5 where time >= date_format(date_sub(19980101000000, interval 7 day),'%Y%m%d%H%i%s')
+and time <= 19980101000000;
+
+5、老化
+select * from loadtest where RecodeTime < date_format(date_sub(date_format(now(),'%Y%m%d%H%i%s'),interval 90 day),'%Y%m%d%H%i%s');
+
+Y - 2017  	 y - 17
+M - August   m - 08
+D - 14th	 d - 14
+H - 24小时制 h - 12小时制
+i
+s
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

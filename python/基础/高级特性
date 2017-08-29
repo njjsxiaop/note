@@ -1,0 +1,248 @@
+一、切片(Slice)
+1、eg
+L = list(range(100)) //创建一个0-99的列表
+[0,1,2,3,...,99]
+
+L[0:3] //索引从0到3。(不包括3，即索引为0\1\2的三个元素)
+L[1:3] //索引为1和2的两个元素
+L[:3]  //与L[0:3]一致
+
+L[-1]  	 //取倒数第1个元素
+L[-10:]  //取后10个元素
+L[-2:-1] //取倒数第2个元素
+
+L[:]	 //原样复制一个list
+
+L[:10:2] //前10个元素每2个取一个
+[0, 2, 4, 6, 8]
+
+L[::5]   //所有元素每5个取一个
+[0, 5, 10, 15, 20,...,95]
+
+2、tuple也可以用切片操作，操作结果仍是tuple。
+>>> (0, 1, 2, 3, 4, 5)[:3]
+(0, 1, 2)
+
+3、字符串'***'可以看成一种list，每个元素就是一个字符。
+因此字符串也可以做切片操作，操作结果仍是字符串。
+>>> 'ABCDEFG'[:3]
+'ABC'
+>>> 'ABCDEFG'[::2]
+'ACEG'
+
+二、迭代(iteration)
+1、可以通过for循环来遍历给定的list或tuple，这种遍历也称为迭代。
+<1>for循环不仅可以用在list或tuple上，还可以用在其他可迭代对象上。
+只要是可迭代对象，无论有无下标都可以迭代。
+
+<2>如dict。
+>>> d = {'a': 1, 'b': 2, 'c': 3}
+>>> for key in d:
+...     print(key)
+...
+a
+c
+b	
+//dict的存储不是按照list的方式顺序排列，所以，迭代出的结果顺序很可能不一样。
+//默认情况下，dict迭代的是key。(for value in d.keys())
+如果要迭代value，可以用for value in d.values()
+如果要同时迭代key和value，可以用for k, v in d.items()
+
+<3>如字符串。
+>>> for ch in 'ABC':
+...     print(ch)
+...
+A
+B
+C
+
+2、判断某个对象是否为可迭代对象
+<1>通过collections模块的Iterable类型判断。
+>>> from collections import Iterable
+>>> isinstance('abc',Iterable)
+True
+>>> isinstance([1,2,3],Iterable)
+True
+>>> isinstance(123,Iterable)    
+False
+
+3、内置函数enumerate()可以把list变成索引-元素对，这样就可以在for循环中同时迭代索引和元素本身了。
+>>> for i, value in enumerate(['A', 'B', 'C']):
+...     print(i, value)
+...
+0 A
+1 B
+2 C
+
+4、for循环中引入多个变量
+>>> for x, y in [(1, 1), (2, 4), (3, 9)]:
+...     print(x, y)
+...
+1 1
+2 4
+3 9
+
+
+三、列表生成式(List Comprehensions)
+1、如何生成[1x1, 2x2, 3x3, ..., 10x10]？
+>>> [x*x for x in range(1,11)]
+[1, 4, 9, 16, 25, 36, 49, 64, 81, 100]
+
+<1>增加if判断
+>>> [x*x for x in range(1,11) if x%2==0]
+[4, 16, 36, 64, 100]
+
+<2>两层循环
+>>> [m+n for m in 'ABC' for n in 'XYZ']
+['AX', 'AY', 'AZ', 'BX', 'BY', 'BZ', 'CX', 'CY', 'CZ']
+
+2、列出当前目录下的所有文件和文件夹名称
+>>> import os
+>>> [d for d in os.listdir('.')] # os.listdir可以列出文件和目录
+['其他', '字符串及字符串编码', 'list', 'tuple', 'set', 'dict', '不可变对象', '函数', '高级特性', '异步IO', 'IO编程', 'test']
+
+3、与for循环一样引入多个变量
+>>> d = dict(x='A',y='B',z='C') 
+>>> [k+'='+v for k,v in d.items()]  //+字符拼接
+['x=A', 'y=B', 'z=C']
+
+
+四、生成器(generator)
+通过列表生成式可以直接创建一个列表。但是受到内存限制，列表容量是有限的。
+我们希望不必创建完整的list以节省大量空间。这种一边循环一边计算的机制称为生成器。
+
+如何创建生成器？
+1、第一种方法很简单，只要把列表生成式的[]改成()
+>>> L = [x * x for x in range(10)]
+>>> L
+[0, 1, 4, 9, 16, 25, 36, 49, 64, 81]
+>>> g = (x * x for x in range(10))
+>>> g
+<generator object <genexpr> at 0x7f7e132140f8>
+
+<1>可以通过next()函数获得generator的下一个返回值
+>>> next(g)
+0
+>>> next(g)
+1
+
+当没有更多元素时，会抛出StopIteration的错误。
+
+<2>使用for循环获取generator中的每个元素
+>>> for n in g:  
+...     print(n)
+
+使用for循环不需要担心StopIteration错误。
+
+---------------------------------------------------
+多语句赋值
+a,b = b,a+b 相当于：
+
+t = (b,a+b) //t是一个tuple
+a = t[0]
+b = t[1]
+---------------------------------------------------
+
+2、函数定义中包含yield关键字，那么这个函数就是一个generator。
+def fib(max):
+    n, a, b = 0, 0, 1
+    while n < max:
+        yield b
+        a, b = b, a + b
+        n = n + 1
+    return 'done'
+
+>>> f = fib(6)
+>>> f
+<generator object fib at 0x104feaaa0>
+
+<1>generator函数每次调用next()时执行，遇到yield语句返回，再次执行时从上次返回的yield语句处继续执行。
+>>> def odd():
+...     print('step 1')
+...     yield 1
+...     print('step 2')
+...     yield 2
+...     print('step 3')
+...     yield 3
+... 
+>>> o = odd()
+>>> o
+<generator object odd at 0x7f80c89e8eb8>
+>>> next(o)
+step 1
+1
+>>> next(o)
+step 2
+2
+>>> next(o)
+step 3
+3
+>>> next(o)
+Traceback (most recent call last):
+  File "<stdin>", line 1, in <module>
+StopIteration
+
+<2>使用for循环迭代函数generator
+for n in fib(6):
+	print(n)
+但是使用for循环调用generator时，拿不到generator中return语句的返回值。
+
+<3>要想拿到返回值，必须捕获StopIteration错误，返回值包含在StopIteration的value中。
+
+五、迭代器(Iterator)
+1、可以直接作用于for循环的数据类型：
+<1>集合数据类型：list、tuple、dict、set、str等
+<2>generator
+这些可以直接作用于for循环的对象统称为可迭代对象(Iterable)。
+可以使用isinstance()判断一个对象是否是Iterable对象。
+
+2、可以被next()函数调用并不断返回下一个值的对象称为迭代器(Iterator)。
+可以使用isinstance()判断一个对象是否是Iterator对象。
+<1>generator都是Iterator对象
+<2>list、dict、str等虽然是Iterable，却不是Iterator。
+可以使用iter()函数将它们变成Iterator。
+>>> isinstance(iter([]), Iterator)
+True
+>>> isinstance(iter('abc'), Iterator)
+True
+
+3、为什么list等不是Iterator？
+这是因为Python的Iterator对象表示的是一个数据流，Iterator对象可以被next()函数调用并不断返回下一个数据，直到没有数据时抛出StopIteration错误。
+可以把这个数据流看做是一个有序序列，但我们却不能提前知道序列的长度，只能不断通过next()函数实现按需计算下一个数据，
+所以Iterator的计算是惰性的，只有在需要返回下一个数据时它才会计算。
+Iterator甚至可以表示一个无限大的数据流，例如全体自然数。而使用list是永远不可能存储全体自然数的。
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

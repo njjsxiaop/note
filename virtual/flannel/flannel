@@ -1,0 +1,11 @@
+
+flannel：
+中文写的比较适合入门的
+http://dockone.io/article/618
+
+英文的
+https://coreos.com/blog/introducing-rudder/
+https://github.com/coreos/flannel
+
+可以在151上面，查看flannel的地址段分配:
+curl http://localhost:2379/v2/keys?recursive=true | jq '.node.nodes[].nodes[] | select(.key=="/uspp.zte/network")|.nodes[1].nodes[]|.'

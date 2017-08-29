@@ -1,0 +1,75 @@
+1、stat、fstat、lstat 它们都是用来返回“相关文件状态信息”的，三者的不同之处在于设定源文件的方式不同。
+int stat(const char *path, struct stat *buf);
+int fstat(int fd, struct stat *buf);
+int lstat(const char *path, struct stat *buf);
+<1>fstat接受的是“文件描述符”，而另外两个则直接接受“文件全路径”。文件描述符是需要调用open系统调用后才能得到。
+<2>stat和lstat的区别：当文件是一个符号链接时，lstat返回的是该符号链接本身的信息；而stat返回的是该链接指向的文件的信息。
+
+2、mkdir、opendir	 //判断文件夹是否存在，创建文件夹
+http://www.cnblogs.com/aizaifengyu/archive/2012/12/06/2805232.html
+
+<1>umask //默认权限
+http://www.cnblogs.com/ezhengnan/p/3670045.html
+预设权限（权限掩码），创建一个目录或档案时，都会带一个默认的权限，umask就与这个默认权限有关。
+
+函数说明：
+umask()会将系统umask值设成参数mask&0777后的值，然后将先前的umask值返回。
+在使用open()建立新文件时，该参数mode并非真正建立文件的权限，而是(mode&~umask)的权限值。
+例如，在建立文件时指定文件权限为0666，通常umask值默认为022，则该文件的真正权限则为0666&～022＝0644，也就是rw-r--r--。
+因此mkdir之前需要先调用umask(0)
+
+返回值：umask用不会有错误值返回。返回值为原先系统的umask值。
+
+<2>mkdir只能创建一层目录，创建多层目录会报错；如果需要创建的目录已经存在也会报错，需要使用opendir来判断。
+
+<3>eg
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <stdio.h>
+#include <dirent.h>
+
+#define PATH "/dir/1"
+
+int main()
+{
+    if(NULL == opendir(PATH))
+    {
+        umask(0);
+        if(0 == mkdir(PATH, S_IRWXU | S_IRWXG | S_IRWXO))
+        {
+            printf("create dir success!\n");
+            return 0;
+        }
+
+        printf("create dir fail!\n");
+        return 1;
+    }
+
+    printf("dir:%s is exists!\n", PATH);
+    return 0;
+}
+
+3、fropen重定向标准输出至文件后(freopen("_log.txt", "w",stdout))，每次输出后要加上fflush(stdout)，因为输出到文件默认是全缓冲，会导致很长时间的打印延迟。
+要取消重定向标准输出至文件，可以使用freopen("/dev/tty","w",stdout)。
+
+4、system()
+<1>在一个daemon程序中调用system来执行一段脚本，返回值总是-1。脚本简单的不能再简单了，只有一句exit 0，但还是返回-1。
+查了很多资料，也没能找出原因，最后经过我反复的调试，终于发现了一个惊天动地的秘密！！返回-1的原因是因为进程将SIGCHLD屏蔽了！！
+
+确实我的程序在main函数里面就调用signal(SIGCHLD, SIG_IGN);将SIGCHLD屏蔽了！
+system的调用过程主要是调三个函数
+fork()、execl()、wait()
+wait需要依赖SIGCHLD信号，所以屏蔽了SIGCHLD信号就永远得不到system正确的返回值了！
+
+<2>另外附一段正确判断脚本执行的方法：
+system的返回值是按不同的字节置位的，0~7位和8~15位置的是不同的内容，判断脚本是否正确执行的正确做法是：
+a. -1 != status
+b. WIFEXITED(status)为真
+c. 0 == WEXITSTATUS(status)
+
+下面来解释一下后两个返回值的含义：
+WIFEXITED(status)   这个宏用来指出子进程是否为正常退出的，如果是，它会返回一个非零值。
+WEXITSTATUS(status) 当WIFEXITED返回非零值时，我们可以用这个宏来提取子进程的返回值。
+					如果子进程调用exit(5)退出，WEXITSTATUS(status)就会返回5；如果子进程调用exit(7)，WEXITSTATUS(status)就会返回7。
+
+5、rename()函数跨文件系统时会报errno为18的错误："Invalid cross-device link"。

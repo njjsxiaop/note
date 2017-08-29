@@ -1,0 +1,145 @@
+一、
+1、READS SQL DATA   //整个过程中所有的SQL语句仅需要读记录，不对记录进行写的操作
+
+2、SET NOCOUNT ON   
+在存储过程中，经常用到SET NOCOUNT ON。用于阻止在结果集中返回显示受T-SQL语句或则usp影响的行计数信息。
+<1>当SET ONCOUNT ON时候，不返回计数；
+<2>当SET NOCOUNT OFF时候，返回计数。
+
+SET NOCOUNT 指定的设置时在执行或运行时候生效，分析时候不生效。
+
+3、系统变量、用户变量、局部变量
+http://blog.csdn.net/liuxiao723846/article/details/42869999
+
+4、FOUND_ROWS()函数
+
+5、SQL STATE
+<1>02000为发生下述异常之一：
+ - SELECT INTO 语句或 INSERT 语句的子查询的结果为空表；
+ - 在搜索的 UPDATE 或 DELETE 语句内标识的行数为零；
+ - 在 FETCH 语句中引用的游标位置处于结果表最后一行之后。
+
+6、declare 和 set 定义变量的区别
+<1>使用set或select直接赋值，变量名以@开头，可以在一个会话的任何地方声明，作用域是整个会话，称为会话变量。
+<2>以 DECLARE 关键字声明的变量，只能在存储过程中使用，称为存储过程变量，例如：
+DECLARE var1  INT DEFAULT 0;  主要用在存储过程中，或者是给存储传参数中。
+
+7、union
+
+8、CONCAT
+mysql CONCAT(str1,str2,…)
+<1>concat函数有一个特点就是如果有一个值为NULL，就返回为NULL。
+
+<2>为此可以使用IFNULL判断字符串是否为NULL。
+ISNULL(check_expression,replacement_value)
+check_expression 可以是任何类型的。replacement_value必须与check_expresssion具有相同的类型。
+检查参数check_expression是否为NULL。如果check_expression为NULL，将返回replacement_value。
+
+注：空字符''不是NULL
+
+9、prepare
+MYSQL中不支持表名，列名为变量。可以通过 PREPARE, EXECUTE 执行事先拼接好的字符串中的SQL语句。
+
+http://maoyifa100.iteye.com/blog/1900305
+http://www.cnblogs.com/xpyan/p/3975597.html //表名拼接时不能用policy_rcp_?这种形式，需要用CONCAT的方式拼接。(0609)
+SET @InsertData = CONCAT('insert into test (id,name) select t2.id,t2.name from test_',total,' t2 on duplicate key update name=t2.name');
+PREPARE stmt FROM @InsertData;  
+EXECUTE stmt; 
+SET @dropTable = CONCAT('DROP TABLE test_',total,';');
+PREPARE stmt1 FROM @dropTable;  
+EXECUTE stmt1; 
+
+<1>语法
+PREPARE statement_name FROM sql_text /*定义*/   
+EXECUTE statement_name [USING variable [,variable...]] /*执行预处理语句*/   
+DEALLOCATE PREPARE statement_name /*删除定义*/   
+
+<2>例子
+mysql> SET @a=1;  
+mysql> PREPARE STMT FROM "SELECT * FROM tbl LIMIT ?";   
+mysql> EXECUTE STMT USING @a;   
+mysql> SET @skip=1; SET @numrows=5;   
+mysql> PREPARE STMT FROM "SELECT * FROM tbl LIMIT ?, ?";   
+mysql> EXECUTE STMT USING @skip, @numrows;
+
+<3>注意点
+A： PREPARE stmt_name FROM preparable_stmt;预定义一个语句，并将它赋给 stmt_name ，stmt_name 是不区分大小写的。
+B： 即使 preparable_stmt 语句中的 ? 所代表的是一个字符串，你也不需要将 ? 用引号包含起来。 
+C： 如果新的 PREPARE 语句使用了一个已存在的 stmt_name ，那么原有的将被立即释放！ 即使这个新的 PREPARE 语句因为错误而不能被正确执行。
+D： PREPARE stmt_name 的作用域是当前客户端连接会话可见。 
+E： 要释放一个预定义语句的资源，可以使用 DEALLOCATE PREPARE 句法。 
+F： EXECUTE stmt_name 句法中，如果 stmt_name 不存在，将会引发一个错误。 
+G： 如果在终止客户端连接会话时，没有显式地调用 DEALLOCATE PREPARE 句法释放资源，服务器端会自己动释放它。 
+H： 在预定义语句中，CREATE TABLE, DELETE, DO, INSERT, REPLACE, SELECT, SET, UPDATE, 和大部分的 SHOW 句法被支持。
+I： PREPARE 语句不可以用于存储过程，自定义函数！但从 MySQL 5.0.13 开始，它可以被用于存储过程，仍不支持在函数中使用！
+
+<4>其他
+了解了PREPARE的用法，再用变量做表名就很容易了。
+不过在实际操作过程中还发现其他一些问题，比如变量定义，declare变量和set @var=value变量的用法以及参数传入的变量。 
+
+测试发现，set @var=value这样定义的变量直接写在字符串中就会被当作变量转换，
+declare的变量和参数传入的变量则必须用CONCAT来连接。
+具体的原理没有研究。 
+
+二、在Navicat中调试
+1、默认端口 5258
+2、GBase存储过程调试总是失败；MySQL可以。
+
+三、语法
+1、DELIMITER 分隔符
+
+2、BEGIN...END
+存储程序(过程和函数)可能包含多个语句，需要使用BEGIN...END复合语句。
+
+3、DECLARE
+DECLARE var_name[,...] type [DEFAULT value]  //默认初始值为NULL
+<1>用于定义各种程序的局部项：局部变量、条件和处理器、游标
+<2>只能在BEGIN...END之间，且必须位于其他语句之前
+<3>游标必须在声明处理器变量之前被声明
+   条件必须在声明游标或处理器前声明
+
+4、SET
+SET var_name = expr [,var_name = expr]
+
+5、SELECT ... INTO ...  //将选出的列存储到变量中，只有单一行的结果才可以被取回。
+
+6、IF
+
+7、ITERATE <标签名>
+实现回到指定位置重复执行，该语句只能出现在LOOP、REPEAT、WHILE结构中。
+
+8、CASE
+
+9、LOOP
+
+10、REPEAT
+
+11、WHILE
+
+12、LEAVE
+
+13、CURSOR
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

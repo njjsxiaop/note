@@ -1,0 +1,2 @@
+1、git status中文显示为数字
+解决：git config --global core.quotepath false

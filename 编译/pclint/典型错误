@@ -1,0 +1,68 @@
+一、pclint 大全
+http://www.verysource.com/code/6693293_2/msg.txt.html
+
+二、典型问题
+1、Warning 666: Expression with side effects passed to repeated parameter 1 in macro 'LS_CHK_RET'
+
+解释：
+Expression with side effects passed to repeated parameter Integer of macro 'Symbol'  
+-- A repeated parameter within a macro was passed an argument with side-effects.  For example:	
+	#define ABS(x) ((x) < 0 ? -(x) : (x))
+	...
+	ABS(n++)
+
+Although the ABS macro is correctly defined to specify the absolute value of its argument, 
+the repeated use of the parameter x implies a repeated evaluation of the actual argument n++. 
+This results in two increments to the variable n.   
+
+[22 section 20.6]  Any expression containing a function call is also considered to have side-effects(副作用).
+
+2、Info 834: Operator '-' followed by operator '-' is confusing.  Use parentheses. 
+
+解释：
+Operator 'Name' followed by operator 'Name' is confusing. Use parentheses. 
+-- Some combinations of operators seem to be confusing.  For example:
+	a = b - c - d;
+	a = b - c + d;
+	a = b / c / d;
+	a = b / c * d;
+tend to befuddle the reader.  To reduce confusion we recommend using parentheses to make the association of these operators explicit.  For example:
+	a = (b - c) - d;
+	a = (b - c) + d;
+	a = (b / c) / d;
+	a = (b / c) * d;
+in place of the above.
+//可见这条pclint info可以忽略。
+
+3、Warning 679: Suspicious Truncation in arithmetic expression combining with pointer
+
+解释：
+Suspicious Truncation in arithmetic expression combining with pointer  
+-- This message is issued when it appears that there may have been an unintended loss of information 
+-- during an operation involving integrals before combining with a pointer whose precision is greater than the integral expression.  For example:
+	//lint -sp8  pointers are 8 bytes
+	//lint -si4  integers are 4 bytes
+	char *f( char *p, int n, int m )
+	{
+		return p + (n + m);  // warning 679
+	}
+	
+By the rules of C/C++, the addition n+m is performed independently of its context and is done at integer precision.  
+Any overflow is ignored even though the larger precision of the pointer could easily accommodate the overflow.  
+If, on the other hand the expression were "p + n + m", which parses as "(p + n) + m", no warning would be issued.
+If the expression were "p + n * m" then, to suppress the warning, a cast is needed.  
+If long were the same size as pointers you could use the expression: return p + ((long) n * m);
+
+4、Warning 416: Likely creation of out-of-bounds pointer (1 beyond end of data) by operator '['
+
+解释：
+creation of out-of-bounds pointer ('Integer' beyond end of data) by operator 'String'  
+-- An out-of-bounds pointer was created.  See message  415 for a description of the parameters Integer and String.  For example:
+	int a[10];
+	...
+	f( a + 11 );
+      
+Here, an illicit pointer value is created and is flagged as such by PC-lint/FlexeLint.  
+Note that the pointer "a + 10" is not considered by PC-lint/FlexeLint to be the creation of an out-of-bounds pointer.  
+This is because ANSI C explicitly allows pointing just beyond an array.  Access through "a + 10", 
+however, as in *(a+10) or the more familiar a[10],  would be considered erroneous but in that case message  415 would be issued. 

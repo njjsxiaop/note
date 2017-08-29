@@ -1,0 +1,210 @@
+//深入理解计算机系统
+1、C语言中数字数据类型的字节数
+	C声明			32位机器		64位机器
+	char			1				1
+	short int		2				2
+	int				4				4				
+	long int		4				8
+	long long int	8				8
+	char *			4				8
+	float			4				4
+	double			8				8
+
+//因此如果要表示整型8个字节范围，建议使用long long int。
+
+<1> C库中的文件<limits.h>中定义了一组常量，用于限定编译器运行的这台机器的不同整型数据类型的取值范围。
+比如，其中定义了常量INT_MAX、INT_MIN、UINT_MAX等。
+
+<2>确定大小的整数类型
+对于某些程序来说，用某个确定大小的表示来编码数据类型非常重要。
+ISO C99标准在文件<stdint.h>中引入了另一类整数类型：它们的声明如intN_t和uintN_t，指定N位有符号和无符号整数。(N可以是8,16,32,64)。
+因此，可以通过uint16_t无歧义地声明一个16位无符号变量。
+ 34 #ifndef __int8_t_defined
+ 35 # define __int8_t_defined
+ 36 typedef signed char     int8_t;
+ 37 typedef short int       int16_t;
+ 38 typedef int         int32_t;
+ 39 # if __WORDSIZE == 64
+ 40 typedef long int        int64_t;
+ 41 # else
+ 42 __extension__
+ 43 typedef long long int       int64_t;
+ 44 # endif
+ 45 #endif
+ 
+ 47 /* Unsigned.  */
+ 48 typedef unsigned char       uint8_t;
+ 49 typedef unsigned short int  uint16_t;
+ 50 #ifndef __uint32_t_defined
+ 51 typedef unsigned int        uint32_t;
+ 52 # define __uint32_t_defined
+ 53 #endif
+ 54 #if __WORDSIZE == 64
+ 55 typedef unsigned long int   uint64_t;
+ 56 #else
+ 57 __extension__
+ 58 typedef unsigned long long int  uint64_t;
+ 59 #endif
+
+<3>C语言标识并没有要求用补码形式来表示有符号整数，但是几乎所有的机器都是这么做的。
+程序员如果希望代码具有最大可移植性，那么除了C语言的整型数据类型的保证取值范围(即取每种类型在16、32、64位机器上的最小取值范围)之外，
+不应该假设任何可表示的数值范围，也不应该假设有符号数会使用何种特殊的表示方式。
+
+<4>关于整数数据类型的取值范围和表示，Java标准是非常明确的。
+它要求采用补码表示，且取值范围与64位的情况一致。
+在Java中单字节数据类型称为byte，且没有long long类型。
+这些非常具体的要求都是为了保证无论在什么机器上，java程序运行的表现都能完全一样。
+
+
+2、整数类型注意点：
+<1>凡是带word的都是正数：
+WORD 2字节正整数
+DWORD 4字节正整数
+QWORD 8字节正整数
+
+<2>可以用负数给整数赋值
+unsigned long long a = -1;                                                                                                                  |
+printf("%llu",a);                                                                                                                           |
+return 0;
+输出：
+18446744073709551615
+
+3、printf 
+x/X		unsigned int	输出无符号16进制整数，x对应的是abcdef，X对应的是ABCDEF（不输出前缀0x)
+p 		void *			输出16进制形式的指针
+d 		int				输出有符号十进制整数
+h 		short int
+l 		long int	 	与d搭配：%ld=long int   %lld=long long int
+
+64位linux机器中做以下测试：
+<1>输出整数
+printf("%u\n", 0xffffffffffffffff);
+printf("%lu\n",0xffffffffffffffff);
+printf("%llu\n",0xffffffffffffffff);
+得到结果：
+4294967295		//截断
+18446744073709551615
+18446744073709551615
+
+可见若要输出long，必须要在u\d前面加l。
+
+<2>输出地址
+char a[10] = "12345";
+printf("%x\n",a);
+printf("%p\n",a);
+得到结果：
+629622c0		//截断
+0x7ffc629622c0
+
+可见64位机器中若要得到地址，必须使用p。这里输出的是一个48位的地址。？？？
+
+4、不同的编译器
+<1>VS2008等编译器，如果选择Win32编译平台，即使所在机器是64位的，编译出来的程序仍然是32位的。
+char a[10] = "12334";
+printf("%x\n",a);
+printf("%p\n",a);
+printf("%u\n", 0xffffffffffffffff);
+printf("%lu\n",0xffffffffffffffff);
+printf("%llu\n",0xffffffffffffffff);
+得到结果：
+45f724
+0045F724	//输出地址为4个字节，可见仍是32位程序
+4294967295
+4294967295	//输出long为4个字节，可见仍是32位程序
+18446744073709551615
+
+5、为什么64位linux下输出的地址是48位的？
+http://bbs.chinaunix.net/thread-4064247-1-1.html
+<1>cat /proc/cpuinfo
+可以看到：
+address sizes   : 40 bits physical, 48 bits virtual			//40位物理地址，48位虚拟地址
+
+<2>64位机器下地址长度是64位！
+
+64位linux机器中做以下测试：
+char a[10] = "12345";
+printf("%x\n", a);
+printf("%p\n", a);
+printf("%d\n",sizeof(a));
+printf("%d\n",sizeof(&a));
+
+结果：
+bbca2e10			//地址的低32位
+0x7ffebbca2e10		//48位
+10					//数组占用空间字节数
+8					//指针占用空间字节数(可见地址长度确实是8个字节，64位)
+
+解释：
+http://blog.csdn.net/tzh476/article/details/51108211
+https://stackoverflow.com/questions/6716946/why-do-64-bit-systems-have-only-a-48-bit-address-space
+
+地址为48位是表象，出现这样结果的原因是x86_64处理器硬件限制。
+x86_64处理器地址线只有48条，故而导致硬件要求传入的地址48位到63位地址必须相同。
+若表示为16进制，则前4位为ffff或者是0000。也就是说有两段合法的地址空间：
+0x00000000 0000 0000-0x0000 7fff ffff ffff
+0xffff8000 0000 0000-0xffff ffff ffff ffff
+由上可知，可表示的地址空间为2^48Byte=2^8TB=256TB，这就是当前处理器的寻址能力。
+又因为操作系统一般使用低端地址，故而一般只用到第一段地址空间，如果要用到第二段地址空间，则需要内存达到寻址空间的一般128TB。
+0x 7ffe bbca 2e10完整的地址其实是0x 0000 7ffe bbca 2e10。
+
+<3>cat /proc/{pid}/maps
+http://www.lenky.info/archives/2011/12/600
+http://www.lenky.info/archives/2012/04/1424
+
+[root@rcp build]# cat /proc/4775/maps 
+00400000-00406000 r-xp 00000000 fd:02 180879548                          /home/sg/workspace/ZTE-RCP-LogServer/build/RCP_LOG_SERVER_X86_64_D_V17.10
+00606000-00607000 rw-p 00006000 fd:02 180879548                          /home/sg/workspace/ZTE-RCP-LogServer/build/RCP_LOG_SERVER_X86_64_D_V17.10
+012ce000-012ef000 rw-p 00000000 00:00 0                                  [heap]
+3ea2a00000-3ea2a20000 r-xp 00000000 fd:00 3014665                        /lib64/ld-2.17.so
+3ea2c1f000-3ea2c20000 r--p 0001f000 fd:00 3014665                        /lib64/ld-2.17.so
+3ea2c20000-3ea2c21000 rw-p 00020000 fd:00 3014665                        /lib64/ld-2.17.so
+3ea2c21000-3ea2c22000 rw-p 00000000 00:00 0 
+3ea2e00000-3ea2fb6000 r-xp 00000000 fd:00 3014668                        /lib64/libc-2.17.so
+3ea2fb6000-3ea31b6000 ---p 001b6000 fd:00 3014668                        /lib64/libc-2.17.so
+3ea31b6000-3ea31ba000 r--p 001b6000 fd:00 3014668                        /lib64/libc-2.17.so
+3ea31ba000-3ea31bc000 rw-p 001ba000 fd:00 3014668                        /lib64/libc-2.17.so
+3ea31bc000-3ea31c1000 rw-p 00000000 00:00 0 
+3ea3200000-3ea3300000 r-xp 00000000 fd:00 3014692                        /lib64/libm-2.17.so
+3ea3300000-3ea3500000 ---p 00100000 fd:00 3014692                        /lib64/libm-2.17.so
+3ea3500000-3ea3501000 r--p 00100000 fd:00 3014692                        /lib64/libm-2.17.so
+3ea3501000-3ea3502000 rw-p 00101000 fd:00 3014692                        /lib64/libm-2.17.so
+3ea3600000-3ea3617000 r-xp 00000000 fd:00 3014672                        /lib64/libpthread-2.17.so
+3ea3617000-3ea3816000 ---p 00017000 fd:00 3014672                        /lib64/libpthread-2.17.so
+3ea3816000-3ea3817000 r--p 00016000 fd:00 3014672                        /lib64/libpthread-2.17.so
+3ea3817000-3ea3818000 rw-p 00017000 fd:00 3014672                        /lib64/libpthread-2.17.so
+3ea3818000-3ea381c000 rw-p 00000000 00:00 0 
+7fd3eca47000-7fd3eca4e000 r-xp 00000000 fd:00 3015017                    /lib64/libnss_sss.so.2
+7fd3eca4e000-7fd3ecc4e000 ---p 00007000 fd:00 3015017                    /lib64/libnss_sss.so.2
+7fd3ecc4e000-7fd3ecc4f000 rw-p 00007000 fd:00 3015017                    /lib64/libnss_sss.so.2
+7fd3ecc4f000-7fd3ecc5b000 r-xp 00000000 fd:00 3014685                    /lib64/libnss_files-2.17.so
+7fd3ecc5b000-7fd3ece5a000 ---p 0000c000 fd:00 3014685                    /lib64/libnss_files-2.17.so
+7fd3ece5a000-7fd3ece5b000 r--p 0000b000 fd:00 3014685                    /lib64/libnss_files-2.17.so
+7fd3ece5b000-7fd3ece5c000 rw-p 0000c000 fd:00 3014685                    /lib64/libnss_files-2.17.so
+7fd3ece5c000-7fd3ece66000 rw-p 00000000 00:00 0 
+7fd3ece7d000-7fd3ed06b000 r-xp 00000000 fd:02 180879500                  /home/sg/workspace/ZTE-RCP-LogServer/gbase/lib/libgbase.so.16
+7fd3ed06b000-7fd3ed26a000 ---p 001ee000 fd:02 180879500                  /home/sg/workspace/ZTE-RCP-LogServer/gbase/lib/libgbase.so.16
+7fd3ed26a000-7fd3ed2be000 rw-p 001ed000 fd:02 180879500                  /home/sg/workspace/ZTE-RCP-LogServer/gbase/lib/libgbase.so.16
+7fd3ed2be000-7fd3ed2c5000 rw-p 00000000 00:00 0 
+7fff36460000-7fff36475000 rw-p 00000000 00:00 0                          [stack]
+7fff365ff000-7fff36600000 r-xp 00000000 00:00 0                          [vdso]
+ffffffffff600000-ffffffffff601000 r-xp 00000000 00:00 0                  [vsyscall]
+
+<1>64位的内存布局是[txt]-[small_heap]-[lib]-[large_heap/mmap]-[stack]-[vdso]-[vsyscall]
+
+<0>vdso与vsyscall的出现原因： http://www.lenky.info/archives/2013/02/2199
+1)由于进行系统调用时，操作系统要由用户态切换到内核态，而这一操作是非常浪费时间的操作，
+无论采用早期的int 0x80/iret中断，还是sysenter/sysexit指令，再到syscall/sysexit指令。
+2)另一方面，某些系统调用并不会向内核提交参数，而仅仅只是从内核里请求读取某个数据，
+例如gettimeofday()，内核在处理这部分系统调用时可以把系统当前时间写在一个固定的位置，
+而应用程序直接从该位置简单读取即可，无需发起系统调用。内核与用户态程序之间进行数据交互的方法就是mmap。
+但由于vsyscall采用固定地址映射的方式，所以存在一定的安全隐患，这一方式便被vdso所改进，vdso的随机映射在一定程度上缓解了安全威胁。
+3)虽然有了vdso，但从历史兼容性上来讲，vsyscall不能就此完全抛弃，否则将导致一些陈旧的（特别是静态连接的）应用程序无法执行，
+因此会看到vdso和vsyscal并存。
+
+1)vdso 	http://blog.csdn.net/juana1/article/details/6904932
+vdso(Virtual Dynamic Shared Object,虚拟动态共享库):就是内核提供的虚拟的.so，这个.so文件不在磁盘上，而是在内核里头。
+内核把包含某.so的内存页在程序启动的时候映射入其内存空间，对应的程序就可以当普通的.so来使用里头的函数。
+比如syscall()这个函数就是在linux-vdso.so.1里头的，但是磁盘上并没有对应的文件。可以通过ldd/bin/bash看看。
+
+2)vsyscall
+vsyscall(virtual system call,虚拟系统调用)

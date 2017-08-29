@@ -1,0 +1,473 @@
+一、vim基本命令  https://my.oschina.net/kutengshe/blog/464602
+0、问题：
+<1>中文乱码
+.vimrc中加入
+set fileencodings=utf-8,ucs-bom,gb18030,gbk,gb2312,cp936
+set termencoding=utf-8
+set encoding=utf-8
+
+
+1、基本操作：
+<1> 0 数字0移动到一行的最前面字符
+	$ 移动到一行的最后字符
+	b 转到单词开头/向前移动一个词
+	e 转到单词末尾
+	w 向后移动一个词
+	
+	/word 向光标之下寻找一个字符串名称为word的字符串     n 继续搜索下一个     N 反向搜索下一个
+	？word 向光标之上寻找一个字符串名称为word的字符串    n 继续搜索下一个     N 反向搜索下一个
+
+	G 转到最后一行
+    gg 转到第一行
+	h(<-)光标左移 l(->)光标右移 k光标上移 j光标下移    eg 下移30行  30j
+	ctrl f 向下移动一页（相当于page down）
+	ctrl b 向上移动一页（相当于page up）
+	ctrl d 向下移动半页
+	ctrl u 向上移动半页
+	
+	一般模式下 # 高亮
+
+<2>进入编辑模式
+	i   //光标前插入              I   //光标所在行的第一个非空格符前插入
+	a   //光标后输入              A   //光标所在行的最后一个字符后插入
+	o   //向下插入一行            O   //向上插入一行
+	r   //取代光标所在的那个字符  R   //一直取代光标所在的文字，直到按下<Esc>
+	
+<3>V(可视化)模式
+v块模式  V行块模式  Ctrl-v列块模式
+
+在正常模式(按Esc进入)下，按键v进入可视化模式，然后按键盘左右键或h,l键即可实现文本的选择。
+其它相关命令：
+v：按字符选择。经常使用的模式，所以亲自尝试一下它。
+V：按行选择。这在你想拷贝或者移动很多行的文本的时候特别有用。
+CTRL＋v：按块选择。非常强大，只在很少的编辑器中才有这样的功能。你可以选择一个矩形块，并且在这个矩形里面的文本会被高亮。
+值得注意的是如果VIM中使用自动换行，那么直到你按ENTER换行前，VIM都会将你之前输入的内容视为一行而不是你看到的好几行，按块选择时就会按VIM中的行来选择块。
+   
+1)选定文本块，使用v进入可视模式；移动光标键选定内容
+2)复制选定块到缓冲区，用y；复制整行用yy
+3)剪切选定块到缓冲区，用d；剪切整行用dd
+4)粘贴缓冲区中的内容，用p
+
+<4>输入方式
+1)直接按键盘编辑   如i
+2):command         如:set nu
+3)执行shell命令   :!command  如:!pwd
+
+<5>撤销
+u/U  撤销上一步操作
+:e!  撤销未保存的全部编辑操作，重新载入文件
+ctrl+r 恢复上一步被撤销的操作
+
+<6>批量替换
+%s/要被取代的字串/新的字串/g
+
+<7>其他
+1)vim ,E  显示所有文件，其中 let mapleader = ","         (:Explor)
+   :vsp 水平打开一个页面
+   :sp 竖直打开一个页面
+
+2)ctags
+普通模式下：
+gd 转到当前光标所指的变量\函数的定义处，并高亮
+* 转到当前光标所指的单词下一次出现的地方
+# 转到当前光标所指的单词上一次出现的地方
+
+2、多窗口操作
+<1>打开新的文件(窗口)
+1)横向切割
+:new + 文件名    eg: new test_1
+:split/sp + 文件名
+
+2)纵向切割
+:vnew + 文件名
+:vsplit/vsp + 文件名
+    
+<2>打开多个文件(窗口)
+vim -o file1 file2 ...  #水平打开多窗口，
+vim -O file1 file2 ...  #垂直打开多窗口,
+vim -d file1 file2 ...  #垂直打开多窗口,并且进行比较
+vimdiff file1 file2 ..  #等同于上一句
+
+vi a b c  //同时打开三个文件，但只显示一个文件
+:n c 可以直接跳到c文件
+:e#  回到刚才编辑的文件
+	
+<3>关闭多个文件(窗口)
+1)可以用：q，也可以使用：close，最后一个窗口不能使用close关闭。使用close只是暂时关闭窗口，其内容还在缓存中，只有使用q!、w!或x才能真能退出。(x:保存并退出)
+2)关闭窗口:
+     q或close      #关闭当前窗口
+     only          #保留当前窗口，关闭其它所有窗口
+     qall(qa)      #退出所有窗口
+     wall          #保存所有窗口
+	
+<4>窗口切换 (可以于插件窗口间)
+ctrl w (h/j/k/l):按键的按法是：先按下 [ctrl] 不放， 再按下 w 后放开所有的按键，然后再按下 j ，则光标可移动到下方的窗口。
+ctrl w //窗口间依次切换
+
+<5>调整窗口大小
+1)纵向调整
+:res(ize) num eg: res 5 显示行数调整为5行
+:res(ize)+num 把当前窗口高度增加num行
+:res(ize)-num 把当前窗口高度减少num行
+
+2)横向调整
+:vertical res(ize) num 指定当前窗口为num列
+:vertical res(ize)+num 把当前窗口增加num列
+:vertical res(ize)-num 把当前窗口减少num列
+
+<6>给窗口重命名
+:f newname  //复制出一个内容一样不同名字的文件
+
+<7>vim与shell切换
+:shell 可以在不关闭vim的情况下切换到shell命令行
+exit  从shell回到vim
+
+3、文件浏览
+<1>:Ex 开启目录浏览器，可以浏览当前目录下的所有文件，并可以选择
+<2>:Sex 水平分割当前窗口，并在一个窗口中开启目录浏览器
+<3>:ls 显示当前buffer情况
+
+4、多标签
+<1>vim -p 要编辑的文件名，如vim -p * 就是编辑当前目录的所有文件
+
+1)多个标签间进行切换时向右切换gt，向左切换用gT
+2)在编辑的时候想增加一个标签就可以:tabnew filename
+3)
+:tabc      关闭当前的tab
+:tabo      关闭所有其他的tab
+:tabs      查看所有打开的tab
+:tabp      前一个
+:tabn      后一个
+
+二、相关插件
+1、ctags插件（在程序中跳来跳去）
+<0>在源代码根目录下执行 ctags -R  生成tags文件
+<1>在.vimrc中增加tags文件的路径如 :set tags=/usr/local/share/uspp/uspp/tags
+   也可以每次在vim中执行:set tags=/usr/local/share/uspp/uspp/tags
+<2><C-]>（函数、宏、变量等）跳转到定义处；<C-T>返回之前位置  <C-O> <C-I>
+<3>代码发生变化都要重新执行步骤0
+
+自动补全 ctrl+n
+	
+2、Taglist 插件
+<0> :Tlist打开插件   :help taglist.txt插件帮助
+<1> ctrl+W 光标在Tlist和vim界面之间切换
+<2> 将光标移到左边Tlist函数名上, 按下回车后, 右侧会自动跳转到函数定义处
+<3> 将光标移到左边Tlist函数名上, 按下空格后, 下方会显示函数声明
+
+4、a.vim-master插件
+<0> :A 头文件与对应源文件文件之间切换
+    :AS 上下分割为两部分  (光标切换/ctrl w)
+    :AV 左右分割为两部分  (光标切换/ctrl w)
+	:AT 新的tab页面
+	:AN 
+<1> :IH 转到光标所在的文件
+    :IHS 上下分割为两部分
+	:IHV 左右分割为两部分
+	:IHT 新的tab页
+	:IHN
+	
+5、cscope插件
+<0>先在~/vimrc中增加,用于设定是否使用 quickfix 窗口来显示 cscope 结果
+:set cscopequickfix=s-,c-,d-,i-,t-,e-
+<1>在代码根目录下执行： cscope -Rbq  生成三个文件：cscope.in.out  cscope.out  cscope.po.out 
+<2>在~/vimrc中增加:cs add /usr/local/share/uspp/uspp/cscope.out /usr/local/share/uspp/uspp  （可能默认在当前工程寻找，所以也可以不加）
+<3>在VIM中执行:cs find g 函数名/变量名   用于查找函数\变量等
+              :cs find c 函数名/变量名   用于查找函数\变量等被哪些地方调用，并跳转到第一个    再执行:cw 打开QuickFix窗口，显示所有调用
+			  
+cscope的主要功能是通过子命令"find"来实现的
+"cscope find"的用法:
+cs find c|d|e|f|g|i|s|t name
+0 或 s	查找本 C 符号(可以跳过注释)
+1 或 g	查找本定义
+2 或 d	查找本函数调用的函数
+3 或 c	查找调用本函数的函数
+4 或 t	查找本字符串
+6 或 e	查找本 egrep 模式
+7 或 f	查找本文件
+8 或 i	查找包含本文件的文件
+
+"cscope
+nmap <leader>ss :cs find s <C-R>=expand("<cword>")<CR><CR>
+nmap <leader>gg :cs find g <C-R>=expand("<cword>")<CR><CR>
+nmap <leader>cc :cs find c <C-R>=expand("<cword>")<CR><CR>
+nmap <leader>tt :cs find t <C-R>=expand("<cword>")<CR><CR>
+nmap <leader>ee :cs find e <C-R>=expand("<cword>")<CR><CR>
+nmap <leader>ff :cs find f <C-R>=expand("<cfile>")<CR><CR>
+nmap <leader>ii :cs find i <C-R>=expand("<cfile>")<CR><CR>
+nmap <leader>dd :cs find d <C-R>=expand("<cword>")<CR><CR>
+
+:cs reset重新初始化所有连接
+
+6、QuickFix窗口
+<0>打开 :cw
+<1>:cn //切换到下一个结果   :cp // 切换到上一个结果
+
+7、MiniBufExplorer插件
+<Tab>	向前循环切换到每个buffer名上
+<S-Tab>	向后循环切换到每个buffer名上
+<Enter>	在打开光标所在的buffer
+d	删除光标所在的buffer
+
+8、Grep插件
+
+---------------------------------------------------------
+
+9、NERDTree插件  //左侧显示文档列表tab页
+<1> :help NERDTree   //帮助
+<2> ctrl-e           //显示/关闭左侧tab页（长时间显示左侧tab页）
+<3> <leader>e        //一次显示左侧tab页
+<4> 隐藏某些文档(.pyc .git .hg .svn .bzr)
+<5> 将该插件视为浏览文档的工具而不是一个分页的工具。
+
+//wsl
+<6>.vimrc_amix中 map <leader>e :edit %:p:h<cr>
+
+10、ctrlp插件  //（正则/模糊）搜索文件（打开的缓冲区/最近使用的文件）
+<1> ctrl-p   //搜索文件
+<2> <Esc>退出
+WinManager窗口中执行ctrl+p切换到最近打开的文件。
+
+11、neocomplete插件  //自动补全
+
+12、pathogen插件  //vim插件管理器
+http://blog.csdn.net/zhaoyw2008/article/details/8012757
+<1>通常情况下安装vim插件，通常是将所有的插件和相关的doc文件都安装在中一文件夹中，如将插件全部安装在/usr/share/vim/vim73/plugin/目录下，
+   将帮助文档全部安装在/usr/share/vim/vim73/doc/目录下。这样做带来的后果是修改和卸载插件很麻烦，很难弄清楚哪个文件属于哪个插件。
+<2>pathogen让每个插件占有一个单独的目录，解决了文件分散的问题。安装完pathogen之后，只需要在~/.vim/目录下新建一个目录~/.vim/bundle/，
+   并将要安装的所有插件放在~/.vim/bundle/目录下即可以使用。如果要删除某个插件，只需要将~/.vim/bundle/目录下对应的插件目录删除即可。
+   如果想保持某个插件为最新版本，直接从插件的仓库checkout一份代码到bundle目录即可。
+<3>pathogen的下载地址为：https://github.com/tpope/vim-pathogen
+  下载后可以直接解压。pathogen插件只有一个单独的脚本，所谓安装就是把它放在当前用户的 ~/.vim/autoload 目录下即可。
+  即将解压后的autoload目录连同里面的pathogen.vim插件拷贝到~/.vim/目录下。
+<4>要启用pathogen，还需要在~/.vimrc 文件里, filetype plugin indent on 之前的任何地方，加入call pathogen#infect()  
+   要生成帮助文档的话，call pathogen#helptags()。
+<5>安装/更新/删除插件：
+   eg：安装nerdtree插件，进入到~/.vim/bundle/目录，然后执行git clone http://github.com/scrooloose/nerdtree.git  
+   eg：更新nerdtree插件，进入到~/.vim/bundle/nerdtree/，执行git pull origin
+   eg：删除nerdtree插件，只需删除~/.vim/bundle/nerdtree目录即可
+
+13、tagbar插件     //taglist加强版
+<1>打开/关闭  :TagbarToggle
+
+14、supertab插件   //tab键补齐功能
+<1>安装：git clone https://github.com/ervandew/supertab.git  
+<2>按tab键自动补全。
+
+15、taghighlight插件  //vim自身可以设置关键字高亮，却无法设置函数名和自定义的数据结构高亮，可以通过taghighlight插件解决这一问题。
+<1>安装mercurial.x86_64以使用hg clone命令
+<2>在~/.vim/bundle/目录下执行 hg clone https://bitbucket.org/abudden/taghighlight 
+
+16、bufExplorer插件  //缓存区列表
+<1> 打开：         ,be/:bufExplorer
+<2> 打开/关闭：    ,bt/:TogglebufExplorer
+<3> 在新水平tab中打开  ,bs
+<4> 在新竖直tab中打开  ,bv
+
+17、molokai插件  //用于VIM的配色方案
+  set t_Co=256  
+  set background=dark
+  colorscheme molokai
+背景颜色和代码补全插件颜色重复时，可以增加上述配置。
+
+注：set t_Co=256 //t_Co即terminal Color之意
+该语句可以使vim开启256色，开启256颜色之后，colorschema在vim里好看了许多，而且与gvim显示的差别不大。
+
+18、winmanager
+let g:winManagerWindowLayout = "FileExplorer,BufExplorer"
+let g:winManagerWidth = 20
+nmap <silent> <F7> :WMToggle<cr>
+
+19、pydiction //python语法补全
+let g:pydiction_location = '~/.vim/bundle/pydiction/complete-dict'
+let g:pydiction_menu_height = 20
+
+20、YouCompleteMe(代码补全神器)  https://github.com/Valloric/YouCompleteMe#fedora-linux-x64
+<1>下载  
+1)git clone --recursive https://github.com/Valloric/YouCompleteMe.git
+2)检查仓库完整性 git submodule update --init --recursive
+//此时/YouCompleteMe/third_party/ycmd/，下没有clang+llvm-3.9.0-x86_64-opensuse13.2.tar.xz，需要下载
+
+http://blog.jobbole.com/58978/      
+http://www.linuxidc.com/Linux/2015-07/120352.htm   
+http://249wangmang.blog.163.com/blog/static/5263076520140209571338/	
+http://584250550.blog.51cto.com/637589/1369990/
+<2>手动安装  
+1)安装clang\python\vim(at least 7.3.584 )
+2)下载clang+llvm-3.9.0-x86_64-opensuse13.2，解压至~/.vim/bundle/YouCompleteMe/third_party/ycmd/clang_archives
+3)/YouCompleteMe/下建立ycm_build文件夹，进入该文件夹执行：
+cmake -G "Unix Makefiles" -DPATH_TO_LLVM_ROOT=~/.vim/bundle/YouCompleteMe/third_party/ycmd/clang_archives/clang+llvm-3.9.0-x86_64-opensuse13.2 . ~/.vim/bundle/YouCompleteMe/third_party/ycmd/cpp
+4)执行cmake --build . --target ycm_core   /  make ycm_core  //生成ycm_core
+  //(无效)执行make ycm_support_libs  //这条命令才会生成第三个文件ycm_client_support.so。因为，YouCompleteMe是C/S架构的，所以存在服务器和服务端的说法。
+//5)在~/.vim/.vimrc_plugin中加入 (不需要，不建议)
+//let g:ycm_global_ycm_extra_conf='~/.vim/bundle/YouCompleteMe/third_party/ycmd/cpp/ycm/.ycm_extra_conf.py'
+//否则会报错：ValueError: Still no compile flags, no completions yet.
+5).ycm_extra_conf.py文件说明
+YCM会在工程路径，及其它的上层路径查找.ycm_extra_conf.py文件。
+可以在~路径下放默认模板，在各个工程目录下放各自的模板。
+
+6).ycm_extra_conf.py配置相关
+为了能够顺利使用语法补全和跳转，需要在.ycm_extra_conf.py中加入自己工程的相关路径，默认.ycm_extra_conf.py配置文件中只有系统函数。(http://584250550.blog.51cto.com/637589/1369990/)
+我们一般把“-I”用作自己的代码，"-isystem"用作第三代码。这样编译代码的时候，第三方代码编译时的warning，就不会显示出来，只需要专注在自己写的代码。
+
+7)其他配置
+启动/关闭 
+nnoremap <leader>y :let g:ycm_auto_trigger=0<CR>                "turn off YCM
+nnoremap <leader>Y :let g:ycm_auto_trigger=1<CR>                "turn on YCM
+
+注意：
+将.vim目录直接拷贝过去时，要在root账户下:
+<1>安装clang、python-devel.x86_64
+<2>/YouCompleteMe/下建立ycm_build文件夹，进入该文件夹执行：
+cmake -G "Unix Makefiles" -DPATH_TO_LLVM_ROOT=~/.vim/bundle/YouCompleteMe/third_party/ycmd/clang_archives/clang+llvm-3.9.0-x86_64-opensuse13.2 . ~/.vim/bundle/YouCompleteMe/third_party/ycmd/cpp
+<3>执行cmake --build . --target ycm_core   /  make ycm_core  //生成ycm_core
+<4>执行./config_gen.py PROJECT_DIRECTORY 
+
+/******************************************************************************/
+但是上述方法会加入太多的路径，可以使用官方提供的方法：
+方法一：
+# Set this to the absolute path to the folder (NOT the file!) containing the
+# compile_commands.json file to use that instead of 'flags'. See here for
+# more details: http://clang.llvm.org/docs/JSONCompilationDatabase.html
+#
+# You can get CMake to generate this file for you by adding:
+#   set( CMAKE_EXPORT_COMPILE_COMMANDS 1 )
+# to your CMakeLists.txt file.
+即，在CMakeLists中增加命令set( CMAKE_EXPORT_COMPILE_COMMANDS 1 )，make之后会在build文件夹中生成compile_commands.json文件。(最好不要改动该文件位置，就放在那，每个工程对应自己的一个)
+在.ycm_extra_conf.py中设置json文件的路径即可。eg: compilation_database_folder = './build/'
+这样就可以任意跳转咯~~ （但是该方法存在缺陷：compile_commands.json中没有头文件的入口，因此每次跳到头文件或在头文件中，就不能定义跳转）
+ctrl o //跳转后返回
+
+方法二：（推荐）
+YCM-Generator  https://github.com/Valloric/YouCompleteMe#quick-feature-summary
+<1>~/.vim/bundle下安装YCM-Generator   git clone https://github.com/rdnetto/YCM-Generator.git
+<2>执行./config_gen.py PROJECT_DIRECTORY    会在工程目录下生成.ycm_extra_conf.py    该文件中会针对当前工程，在flags中加入所有头文件目录
+
+注：个人推荐方法二，但在跳转时仍有些许问题，有时候会莫名的跳不了。可能是使用还不熟练的原因吧。。
+
+/*******************************************************************************/
+
+<3>自动安装 (推荐)
+-./install.py --clang-completer    //此步骤会下载clang+llvm-3.9.0-x86_64-opensuse13.2.tar.xz至目录/YouCompleteMe/third_party/ycmd/
+//--clang-completer表示支持C系列语言的语法
+<4>安装说明
+1)YCM插件是一个编译形成的组件，如果ycm_core library APIs发生变化，需要update YCM时，YCM会通知重新编译，需要返回安装步骤
+2)在YouCompleteMe目录下创建ycm_build目录，进入该目录编译，（这样生成的文件都会在这个目录中，便于管理）
+  执行 cmake -G "Unix Makefiles" -DPATH_TO_LLVM_ROOT=~/.vim/bundle/YouCompleteMe/third_party/ycmd/clang_archives/clang+llvm-3.9.0-x86_64-opensuse13.2 . ~/.vim/bundle/YouCompleteMe/third_party/ycmd/cpp
+  //其中DPATH_TO_LLVM_ROOT是2)中clang+llvm包的路径
+  执行 cmake --build . --target ycm_core 生成ycm_core.so
+  执行 make ycm_support_libs 生成ycm_client_support.so //执行失败
+
+---------------------------------------------------------
+三、vim语法：
+0、简单语法
+<1><cr>//回车换行
+<2>set
+set nu//左侧显示行号
+set tabstop=4//设置制表符宽度为4
+<3>设置map leader
+let mapleader = ","
+
+1、键盘映射(Map)  http://blog.csdn.net/daofengdeba/article/details/7605124
+<1>使用:map命令可以将键盘上的某个按键与vim的命令绑定起来。
+:map <F5> i{<Esc>ea}<Esc>   //实际效果不好
+//i{插入{，<Esc>退回到一般模式；e移到单词结尾，a}增加字符}，最后再退回到一般模式。
+效果：光标定位在一个单词abc上，按下F5，变为{abc}
+
+<2>不同模式下的键盘映射：
+n 一般模式Normal              :map   :nmap
+v 可视化模式Visual            :map   :vmap
+o 运算模式Operator Pending    :map   :omap
+i 插入模式Insert Only         :map!  :imap
+c 命令行模式Command Line      :map!  :cmap
+
+! 插入模式/命令行模式
+
+<3>查看键盘映射  //使用:map命令，其中第一列标明了映射在哪种模式下工作。
+
+<4>取消键盘映射
+:unmap <F10>
+注：不同模式下使用对应的unmap命令，:iunmap、nunmap等
+
+<5>、特殊参数  //位于映射命令的后面，其他任何参数的前面
+<buffer>  映射只局限于当前缓冲区(当前正在编译的文件内部)
+<silent>  执行键绑定时不在命令行上回显
+:map <silent> ,w /abcd<CR> 
+你在输入,w查找abcd时，命令行上不会显示/abcd，如果没有<silent>参数就会显示出来 
+
+2、let和set
+
+
+3、变量
+b:name —— 只对当前buffer有效的变量
+w:name —— 只对当前窗口有效的变量
+g:name —— 全局变量
+v:name —— vim预定义变量
+a:name —— 函数的参变量
+
+---------------------------------------------------------------------------------------------
+
+四、目前用到的插件：
+1、molokai
+set t_Co=256
+set background=dark
+colorscheme molokai
+
+2、YCM
+
+3、cscope
+
+4、NERD_tree
+
+5、bufExplorer
+
+6、CtrlP
+
+7、Taglist/Tagbar
+
+8、WinManager
+
+-----------------------------------------------------------------------------------------------
+五、配置文件说明
+一、.vimrc_amix
+1、文件类型检测 //http://easwy.com/blog/archives/advanced-vim-skills-filetype-on/
+<1>文件中的命令
+filetype plugin on
+filetype indent on
+
+<2>相关概念
+打开文件类型检测功能很简单，在你的vimrc中加入下面一句话就可以了：filetype plugin indent on 
+1)可以在vim中输入":filetype"命令，查看文件类型检测功能是否已经打开。
+2)filetype plugin indent on可分为以下三条命令：
+	filetype on         //打开文件类型检测功能。
+		当执行该命令时，vim实际上执行的是vimRUNTIME/filetype.vim和vimRUNTIME/scripts.vim来判断文件的类型。
+	filetype plugin on  //允许vim加载文件类型插件。实际执行vimRUNTIME/ftplugin.vim
+		当执行该命令时，vim会根据检测到的文件类型，在runtimepath中搜索该类型的所有插件，并执行它们。
+	filetype indent on  //允许vim为不同类型的文件定义不同的缩进格式。实际执行vimRUNTIME/indent.vim
+	
+2、	
+
+
+二、.vimrc_plugin
+
+
+三、.vimrc_xxvv
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

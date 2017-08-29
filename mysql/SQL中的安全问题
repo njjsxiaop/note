@@ -1,0 +1,44 @@
+SQL语句写作不当，会给应用系统造成安全隐患，其中最终要的隐患就是SQL注入。
+
+一、SQL注入简介
+1、SQL注入(SQL Injection)就是利用某些数据库的外部接口将用户数据插入到实际的数据库操作语言中，
+从而达到入侵数据库乃至系统的目的。
+
+2、SQL注入的产生主要是程序对用户输入没有进行严格过滤，导致非法数据库查询语句的执行。
+
+3、eg：
+$sql = "SELECT * FROM user WHERE username='$username' AND password='$password'";
+$result = mysql_db_query($dbname, $sql);
+$userinfo = mysql_fetch_array($result);
+if (empty($userinfo))
+{
+	echo "登录失败";
+} else {
+	echo "登录成功";
+}
+
+<1>以上程序的意图是：如果能在用户表中找到输入$username，且密码匹配，就登陆成功。否则登陆失败。
+
+<2>但在实际使用过程中：
+http://127.0.0.1/injection/user.php?username=angel' or '1=1
+http://127.0.0.1/injection/user.php?username=angel'/*
+http://127.0.0.1/injection/user.php?username=angel'#
+
+这三者均能成功登陆系统：
+在SQL中/*和#都可以注释后面的语句。导致只根据用户名而没有密码的URL能成功登陆。
+而or和注释符不同之处在于，它是利用逻辑运算。
+
+二、应用开发中可以采取的应对措施
+1、PrepareStatement + Bind-variable
+对 Java、JSP 开发的应用,可以使用PrepareStatement+Bind-variable来防止SQL注入，
+在使用这类语言作数据库开发时，强烈建议使用PrepareStatement+Bind-variable来实现，尽量不要使用拼接的SQL。
+
+2、使用应用程序提供的转换函数
+很多应用程序接口都提供了对特殊字符进行转换的函数，恰当地使用这些函数，可以防止应用程序用户输入使应用程序生成不期望的语句。
+
+3、自己定义函数进行校验
+如果现有的转换函数仍然不能满足要求，则需要自己编写函数进行输入校验。输入验证是一个很复杂的问题。
+输入验证的途径可以分为以下几种：
+- 整理数据使之变得有效；
+- 拒绝已知的非法输入；
+- 只接受已知的合法输入。

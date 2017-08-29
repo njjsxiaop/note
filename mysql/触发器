@@ -1,0 +1,76 @@
+触发器是与表有关的数据库对象，满足定义条件时触发，并执行触发器中定义的语句集合。
+可用于协助应用在数据库端确保数据的完整性。
+
+1、创建触发器
+CREATE TRIGGER trigger_name trigger_time trigger_event ON tbl_name FOR EACH ROW trigger_stmt;
+trigger_time：触发时间，可以是BEFORE(在检查约束前触发)、AFTER(在检查约束后触发)。
+trigger_event：触发事件，可以是INSERT、UPDATE、DELETE。
+
+<1>触发器只能创建在永久表(Permanent Table)上，不能对临时表(Temporary Table)创建触发器。
+
+<2>MySQL中同一表的相同触发时间的相同触发事件，只能定义一个触发器。
+例如：针对同一表中的不同字段的AFTER更新触发器，Oracle中可以定义两个不同的UPDATE触发器。
+MYSQL中只能定义一个触发器，要在触发器中通过判断更新的字段进行对应的处理。
+
+<3>使用别名OLD和NEW来引用触发器中发生变化的记录内容。
+
+<4>目前触发器只支持行级触发，不支持语句级触发。
+
+<5>使用注意点：
+对于有重复记录，需要进行UPDATE操作的INSERT，触发器触发的顺序是：BEFORE INSERT、BEFORE UPDATE、AFTER UPDATE。
+对于没有重复记录的INSERT，触发器触发的顺序是：BEFORE INSERT、AFTER INSERT。
+
+因此，在设计触发器时一定要注意：对于实际执行UPDATE的操作，仍会执行BEFORE INSERT触发器的内容。
+
+2、删除触发器
+DROP TRIGGER [schema_name.]trigger_name;	//schema_name为库名。不携带库名时，默认为当前数据库
+
+3、查看触发器
+<1>SHOW TRIGGERS; //返回所有触发器的信息
+
+<2>查询指定触发器的信息
+1)先查询information_schema.triggers系统表：
+gbase> desc information_schema.triggers;
++----------------------------+---------------+------+-----+---------+-------+
+| Field                      | Type          | Null | Key | Default | Extra |
++----------------------------+---------------+------+-----+---------+-------+
+| TRIGGER_CATALOG            | varchar(512)  | YES  |     | NULL    |       |
+| TRIGGER_SCHEMA             | varchar(64)   | NO   |     |         |       |
+| TRIGGER_NAME               | varchar(64)   | NO   |     |         |       |
+| EVENT_MANIPULATION         | varchar(6)    | NO   |     |         |       |
+| EVENT_OBJECT_CATALOG       | varchar(512)  | YES  |     | NULL    |       |
+| EVENT_OBJECT_SCHEMA        | varchar(64)   | NO   |     |         |       |
+| EVENT_OBJECT_TABLE         | varchar(64)   | NO   |     |         |       |
+| ACTION_ORDER               | bigint(4)     | NO   |     | 0       |       |
+| ACTION_CONDITION           | longtext      | YES  |     | NULL    |       |
+| ACTION_STATEMENT           | longtext      | NO   |     | NULL    |       |
+| ACTION_ORIENTATION         | varchar(9)    | NO   |     |         |       |
+| ACTION_TIMING              | varchar(6)    | NO   |     |         |       |
+| ACTION_REFERENCE_OLD_TABLE | varchar(64)   | YES  |     | NULL    |       |
+| ACTION_REFERENCE_NEW_TABLE | varchar(64)   | YES  |     | NULL    |       |
+| ACTION_REFERENCE_OLD_ROW   | varchar(3)    | NO   |     |         |       |
+| ACTION_REFERENCE_NEW_ROW   | varchar(3)    | NO   |     |         |       |
+| CREATED                    | datetime      | YES  |     | NULL    |       |
+| SQL_MODE                   | varchar(8192) | NO   |     |         |       |
+| DEFINER                    | varchar(77)   | NO   |     |         |       |
+| CHARACTER_SET_CLIENT       | varchar(32)   | NO   |     |         |       |
+| COLLATION_CONNECTION       | varchar(32)   | NO   |     |         |       |
+| DATABASE_COLLATION         | varchar(32)   | NO   |     |         |       |
++----------------------------+---------------+------+-----+---------+-------+
+
+2)SELECT * FROM information_schema.triggers WHERE trigger_name = 'XXX';
+
+4、触发器的使用
+<1>使用限制
+1)触发程序不能调用将数据返回客户端的存储程序，也不能使用采用CALL语句的动态SQL语句，允许存储程序通过参数将数据返回触发程序。
+也就是存储过程或函数通过OUT、INOUT类型的参数将数据返回触发器是可以的，但不能调用直接返回数据的过程。
+
+2)不能在触发器中使用以显示或隐式方式开始或结束事务的语句。
+如：START TRANSACTION、COMMIT、ROLLBACK等。
+
+<2>MySQL触发器是按照BEFORE触发器、行操作(对触发器所在表的操作)、AFTER触发器的顺序执行的。其中任何一步发生错误都不会继续执行剩下的操作。
+如果是对事务进行操作，那么会整个作为一个事务被回滚；
+如果是对非事务进行操作，那么已经更新的记录将无法回滚。
+
+<3>不要将应用的处理逻辑过多的依赖触发器！！！
+触发器是行触发的(每一行都触发一次！)，每次增删改都会触发。编写复杂的触发器或者增加过多的触发器，对记录的增删改操作肯定有比较严重的影响。

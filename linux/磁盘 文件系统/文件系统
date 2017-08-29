@@ -1,0 +1,42 @@
+一、tmpfs(临时文件系统)
+1、tmpfs是Linux/Unix系统上的一种基于内存的文件系统。tmpfs可以使用内存或swap分区来存储文件。
+动态调节大小：tmpfs的大小是动态的,用多少才分配多少,删除文件则会释放相应的空间。
+
+2、内核支持
+编译内核时，启用“Virtual memory file system support”就可以使用tmpfs,linux kernel从2.4以后都开始支持tmpfs。
+目前主流的linux系统默认已启用tmpfs，如Redhat。
+
+3、缺点
+不可持久保存：tmpfs的先天优势变成了他的先天劣势:内存的特性导致位于tmpfs上的数据断电会丢失。
+成本高：相比较硬盘的价格来说,内存无疑还是很昂贵的,所以用tmpfs的目录不要放太大的东西。
+
+4、应用场景
+天生就是为临时目录而生的。 
+例如：作为程序运行产生的临时文件目录,特别是针对服务器上某些Web服务更是前途无量,比如squid,网站,那将如虎添翼。
+
+5、内存挂载虚拟磁盘
+mount -t tmpfs -o size=20m  tmpfs /mnt/tmp   //给/mnt/tmp分配20M的内存空间
+
+6、/dev/shm/ 默认大小为内存的一半。
+
+二、df -hT
+[root@forimg cron.daily]# df -hT
+Filesystem     Type      Size  Used Avail Use% Mounted on
+/dev/vda1      ext4       99G   86G  8.9G  91% /
+devtmpfs       devtmpfs  7.9G     0  7.9G   0% /dev
+tmpfs          tmpfs     7.9G   84K  7.9G   1% /dev/shm         //默认大小为内存的一半
+tmpfs          tmpfs     7.9G   41M  7.8G   1% /run
+tmpfs          tmpfs     7.9G     0  7.9G   0% /sys/fs/cgroup
+tmpfs          tmpfs     1.6G   16K  1.6G   1% /run/user/42
+tmpfs          tmpfs     1.6G     0  1.6G   0% /run/user/0
+tmpfs          tmpfs     1.0G  332M  693M  33% /home/tmp
+
+1、第1列是代表文件系统对应的设备文件的路径名，一般是硬盘上的分区。
+
+2、devtmpfs
+devtmpfs的功用是在Linux核心启动早期建立一个初步的/dev，令一般启动程序不用等待udev，缩短GNU/Linux的开机时间。
+
+Devtmpfs lets the kernel create a tmpfs very early at kernel initialization, before any driver core device is registered. 
+Every device with a major/minor will have a device node created in this tmpfs instance. 
+After the rootfs is mounted by the kernel, the populated tmpfs is mounted at /dev. 
+In initramfs, it can be moved to the manually mounted root filesystem before /sbin/init is executed.

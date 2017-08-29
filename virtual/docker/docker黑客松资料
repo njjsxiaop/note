@@ -1,0 +1,31 @@
+docker黑客松 2015-12-26
+
+docker 入门教程
+http://www.docker.org.cn/book/docker.html
+
+
+深入浅出docker
+网页版：http://www.infoq.com/cn/articles/docker-core-technology-preview/
+
+
+深入浅出mesos
+http://www.infoq.com/cn/articles/analyse-mesos-part-01
+
+Kitematic
+Kitematic, the Docker GUI, runs on Mac OS X and Windows operating systems. 
+Beginning with the 1.8 Docker release, you use the Docker Toolbox to install Kitematic. 
+See the Mac OS X installation guide or the Windows installation guide for details on installing with Docker Toolbox.
+For information about using Kitematic, take a look at the User Guide.
+
+Install Docker Machine
+On OS X and Windows, Machine is installed along with other Docker products when you install the Docker Toolbox. 
+For details on installing Docker Toolbox, see the Mac OS X installation instructions or Windows installation instructions.
+If you only want Docker Machine, you can install the Machine binaries (the latest versions of which are located at https://github.com/docker/machine/releases/ ) directly by following the instructions in the next section.
+
+Install Docker Compose
+You can run Compose on OS X and 64-bit Linux. It is currently not supported on the Windows operating system. 
+To install Compose, you’ll need to install Docker first.
+
+Install and Create a Docker Swarm
+You use Docker Swarm to host and schedule a cluster of Docker containers. 
+This section introduces you to Docker Swarm by teaching you how to create a swarm on your local machine using Docker Machine and VirtualBox.

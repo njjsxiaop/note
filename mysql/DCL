@@ -1,0 +1,14 @@
+1、DCL(Data Control Language)用于授予或回收数据库的某种特权，并控制数据库操纵事务发生的时间及效果，对数据库实行监控等。
+GRANT  -- 授权
+REVOKE -- 回收
+
+2、举例
+<1>创建一个数据库用户z1，具有对sakila库中的所有表的SELECT和INSERT权限：
+mysql> GRANT SELECT,INSERT ON sakila.* TO 'z1'@'localhost' IDENTIFIED BY '123';
+
+<2>收回INSERT权限
+mysql> REVOKE INSERT ON sakila.* from 'z1'@'localhost';
+
+<3>赋予root用户具有所有库中所有表的所有权限。
+mysql> GRANT ALL PRIVILEGES ON *.* TO 'root'@'%' IDENTIFIED BY 'db10$ZTE' WITH GRANT OPTION;
+其中 WITH GRANT OPTION 表示 具有授予权限的权利，这样root用户就可以将自己的权限授予其他用户。

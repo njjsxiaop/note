@@ -1,0 +1,56 @@
+#! /bin/bash
+
+root_path=`dirname "$(readlink -f "$0")"`
+cd ${root_path}
+
+FILESVR=10.42.6.20
+PASSWD=qwe123
+SSHPASS=${root_path}/sshpass
+
+# 更新YUM仓库
+YUM_REPOS_D=/etc/yum.repos.d
+rm -rf ${YUM_REPOS_D}/*.repo
+$SSHPASS -p ${PASSWD} scp -o StrictHostKeyChecking=no root@${FILESVR}:${YUM_REPOS_D}/*.repo ${YUM_REPOS_D}/
+yum makecache
+
+# 安装软件
+yum group install -y "Development and Creative Workstation"
+yum install -y cmake git-review samba python-pip gcc gcc-c++ telnet zlib zlib-devel
+
+# 设置pip仓库
+#PIP_CONF=/root/.pip
+#$SSHPASS -p ${PASSWD} scp -o StrictHostKeyChecking=no root@${FILESVR}:${PIP_CONF}/*.conf ${PIP_CONF}
+#pip install git-review==1.25
+
+# 更新docker
+DOCKER_CONF=/etc/systemd/system/docker.service.d/
+yum erase -y docker* && yum -y install docker
+mkdir -p ${DOCKER_CONF}
+$SSHPASS -p ${PASSWD} scp -o StrictHostKeyChecking=no root@${FILESVR}:${DOCKER_CONF}/*.conf ${DOCKER_CONF}
+systemctl enable docker && systemctl start docker
+
+# 设置samba
+SMB_D=/etc/samba
+$SSHPASS -p ${PASSWD} scp -o StrictHostKeyChecking=no root@${FILESVR}:${SMB_D}/smb.conf ${SMB_D}/
+systemctl enable smb
+
+# 禁用SELINUX和firewalld
+sed -i 's/^SELINUX=.*/SELINUX=disabled/g' /etc/selinux/config 
+systemctl disable firewalld
+
+# 设置时区并更新时间
+timedatectl set-timezone Asia/Shanghai
+ntpdate time.zte.com.cn && hwclock -w
+
+# 设置内核启动参数
+GRUB_CONF=/etc/default/
+$SSHPASS -p ${PASSWD} scp -o StrictHostKeyChecking=no root@${FILESVR}:${GRUB_CONF}/grub ${GRUB_CONF}
+grub2-mkconfig -o /boot/grub2/grub.cfg
+
+/etc/default/grub中的内容：
+GRUB_TIMEOUT=5
+GRUB_DEFAULT=saved
+GRUB_DISABLE_SUBMENU=true
+GRUB_TERMINAL_OUTPUT="console"
+GRUB_CMDLINE_LINUX="rhgb quiet cgroup_disable=cpu,cpuset,memory hugepagesz=2M hugepages=1024"
+GRUB_DISABLE_RECOVERY="true"

@@ -1,0 +1,21 @@
+1、tar
+
+
+2、xz
+<1>压缩
+	-z 要压缩的文件
+    -k 保留被压缩的文件
+	-0到-9 设置压缩率，默认压缩等级是6
+
+<2>解压
+	-d 要解压的文件
+	-k 保留被解压缩的文件
+
+<3>创建或解压tar.xz文件的方法
+习惯了tar czvf或tar xzvf的人可能碰到 tar.xz也会想用单一命令搞定解压或压缩。
+其实不行，tar里面没有针对xz格式的参数，比如z是针对gzip，j是针对bzip2。
+
+1)创建tar.xz文件：要先 tar cvf xxx.tar xxx/ 创建xxx.tar文件，
+然后用 xz -z xxx.tar 来将 xxx.tar压缩成为 xxx.tar.xz。
+
+2)解压tar.xz文件：要先 xz -d xxx.tar.xz 将 xxx.tar.xz解压成 xxx.tar 然后，再用 tar xvf xxx.tar来解包。

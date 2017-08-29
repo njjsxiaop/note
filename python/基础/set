@@ -1,0 +1,27 @@
+一、基本介绍
+1、set与dict类似，也是一组key的集合，但不存储value。
+<1>由于key不能重复，所以set中没有重复的key。
+
+2、创建set
+要创建一个set需要提供一个list作为输入集合。
+>>> s=set([1,2,3,4,5,5]) //重复元素自动过滤
+>>> s
+{1, 2, 3, 4, 5}  //表示set中有1,2,3,4,5这些元素，显示的顺序不表示set是有序的。
+
+>>> m=set('abcdef')
+>>> m
+{'d', 'b', 'e', 'c', 'a', 'f'}
+
+3、set相关操作
+<1>通过add(key)方法可以添加元素到set中。添加重复元素没有效果。
+
+<2>通过remove(key)方法可以删除元素。
+
+<3>set可以看成数学意义上无序和无重复元素的集合。两个set可以取交集、并集等操作。
+
+<4>set和dict原理一样，同样不能放入可变对象。
+>>> s=set([1,2,3,[1,2,3],4,5])
+Traceback (most recent call last):
+  File "<stdin>", line 1, in <module>
+TypeError: unhashable type: 'list'
+  

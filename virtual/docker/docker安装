@@ -1,0 +1,145 @@
+1、安装RHEL时提示“此主机支持 Intel VT-x,但 Intel VT-x 处于禁用状态”
+解决方法：重启计算机，开机F1进入BIOS界面。“Advanced--CPU setup--Intel(R) Virtualization Technology”设置为Enable。
+          F10保存并退出。重启计算机即可。
+
+2、安装RHEL 7.0/7.1，打开只有命令行界面，并且切换不到图形界面
+解决方法：我这里是因为VMware配置完成后，在安装虚拟机时（autoinst.iso）自动安装了，很多选项没有配置，解决方法两种，如下：
+          http://blog.csdn.net/hemingwang0902/article/details/8890267
+
+5、网络连接：
+NAT模式：1、VMnet8 IPV4自动获取
+         2、虚拟机 IPV4自动获取
+		 3、配置网络代理（虚拟机网络配置、浏览器） 浏览器代理设置如截图所示
+		
+6、Couldn’t resolve host ‘mirrorlist.centos.org’
+解决方法：1、打开文件/etc/resolv.conf在其中添加： 
+             nameserver 8.8.8.8 
+			 nameserver 8.8.4.4 
+			（search localdomain）
+          2、然后重启网卡：使用命令: service network restart
+		
+7、yum提示another app is currently holding the yum lock;waiting for it to exit
+解决方法：可能是系统自动升级正在运行，yum在锁定状态中。可以通过强制关掉yum进程：
+          #rm -f /var/run/yum.pid
+          然后就可以使用yum了。
+		  
+8、sudo yum update 时，提示 No address associated with hostname
+解决方法：直接设置静态ip地址，并且把DNS设置成8.8.8.8 就可以了
+          ip所在文件  /etc/sysconfig/network-scripts/ifcfg-ethx
+		  
+9、安装docker之后，获取hello-world镜像：sudo docker run hello-world时，提示 No address associated with hostname
+解决方法：/lib/systemd/system/docker.service中增加代理 Environment=HTTPS_PROXY=proxynj.zte.com.cn:80
+          /etc/resolv.conf中增加nameserver 10.30.1.9
+		  systemctl restart docker
+          systemctl daemon-reload 
+          systemctl restart docker
+
+10、中文docker镜像网站：https://hub.alauda.cn/
+    eg：docker pull index.alauda.cn/library/hello-world
+	docker官方镜像网站：index.docker.io
+
+11、export显示环境变量，最后面是代理设置
+    scp远程复制  scp 10.43.214.192:~/vim.tar .
+	             tar -xvf vim.tar 
+	ps   最基本同时也是非常强大的进程查看命令
+	systemctl start docker 
+	docker ps -a
+	
+12、使用下面的命令可以设置红帽系统或者centos系统启动的时候，自动启动docker服务
+    $ sudo chkconfig docker on 
+
+13、docker镜像放置在 (/dev/mapper)?????
+    docker程序安装在 /var/lib下
+	"Image": "2d13ac7ee9482425d2838f3d1fa8a6a0a0fd5ad1ff79f801333461eb39c3e845",
+    "ResolvConfPath": "/var/lib/docker/containers/4bbb21cecc6ed90a012fbac142d50122b3d52ed3fa7e745f6962053d6f15213e/resolv.conf",
+    "HostnamePath": "/var/lib/docker/containers/4bbb21cecc6ed90a012fbac142d50122b3d52ed3fa7e745f6962053d6f15213e/hostname",
+    "HostsPath": "/var/lib/docker/containers/4bbb21cecc6ed90a012fbac142d50122b3d52ed3fa7e745f6962053d6f15213e/hosts",
+    "LogPath": "/var/lib/docker/containers/4bbb21cecc6ed90a012fbac142d50122b3d52ed3fa7e745f6962053d6f15213e/4bbb21cecc6ed90a012fbac142d50122b3d52ed3fa7e745f6962053d6f15213e-json.log",
+
+	
+14、docker search//查找镜像 docker search tutorial
+           pull//下载镜像   docker pull learn/tutorial
+		   run//运行
+		   commit//保存对容器的修改(容器ID前三位)
+		   ps//命令可以查看所有正在运行中的容器列表
+		   inspect//命令可以查看更详细的关于某一个容器的信息(容器ID前三位)
+		   images//命令可以列出所有安装过的镜像
+		   push//命令可以将某一个镜像发布到官方网站
+		   
+	docker version
+		   
+	eg：在docker容器中运行hello world!
+        docker容器可以理解为在沙盒中运行的进程。这个沙盒包含了该进程运行所必须的资源，
+		包括文件系统、系统类库、shell 环境等等。但这个沙盒默认是不会运行任何程序的。
+		你需要在沙盒中运行一个进程来启动某一个容器。这个进程是该容器的唯一进程，
+		所以当该进程结束的时候，容器也会完全的停止。
+      目标：
+        在我们刚刚下载的镜像中输出"hello word"。为了达到这个目的，我们需要在这个容器中运行"echo"命令，
+		输出"hello word"。
+      提示：
+        docker run命令有两个参数，一个是镜像名，一个是要在镜像中运行的命令。
+      正确的命令：
+        $docker run learn/tutorial echo "hello word"
+---------------------------------------------------------------------------------------------------------------------------
+docker安装：
+1、依赖性检查：
+Docker需要一个64位系统的红帽系统，内核的版本必须大于3.10。可以用下面的命令来检查是否满足docker的要求。
+$ uname -r 3.10.0-229.el7.x86_64 
+如果上述的依赖满足的话，还是推荐您全面地更新红帽系统，以保证内核相应的bug都得到修复。
+
+2、更新现有的yum包
+(一)使用安装脚本安装:
+更新yum包
+$ sudo yum update 
+执行docker安装脚本
+$ curl -sSL https://get.docker.com/ | sh 
+启动docker服务
+$ sudo service docker start
+确认docker安装成功
+$ sudo docker run hello-world
+
+(二)使用yum包安装
+更新yum包
+$ sudo yum update 
+添加docker源
+$ cat >/etc/yum.repos.d/docker.repo <<-EOF
+[dockerrepo]
+name=Docker Repository
+baseurl=https://yum.dockerproject.org/repo/main/centos/7 enabled=1 gpgcheck=1 gpgkey=https://yum.dockerproject.org/gpg EOF
+使用yum命令安装docker
+$ sudo yum install docker-engine 
+启动docker服务
+$ sudo service docker start
+确认docker是否安装成功
+$ sudo docker run hello-world
+
+3、创建docker分组
+使用有sudo权限的帐号登录系统。创建docker分组，并将相应的用户添加到这个分组里面。
+sudo usermod -aG docker your_username
+退出，然后重新登录，以便让权限生效。确认你可以直接运行docker命令。
+$ docker run hello-world
+
+4、使用下面的命令可以设置红帽系统或者centos系统启动的时候，自动启动docker服务。
+$ sudo chkconfig docker on 
+如果你需要为docker设置http代理、使用不同的目录或者分区，或者做其他的个性化设置，可以参考这篇文章：customize your Systemd Docker daemon options.
+
+docker删除：
+可以使用yum来删除docker。
+1、列出docker包的具体的名字。
+$ yum list installed | grep docker
+yum list installed | grep docker
+docker-engine.x86_64 1.7.1-0.1.el7
+
+2、删除docker。
+$ sudo yum -y remove docker-engine.x86_64 
+备注：该命令只是删除docker运行环境，并不会删除镜像，容器，卷文件，以及用户创建的配置文件。
+
+3、清除镜像和容器文件。
+$ rm -rf /var/lib/docker
+手工查找并删除用户创建的配置文件。
+
+-----------------------------------
+修改proxy：all_proxy
+           ftp
+		   http
+		   https

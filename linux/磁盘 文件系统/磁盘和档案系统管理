@@ -1,0 +1,114 @@
+一、认识EXT2档案系统
+硬盘分割 (partition)
+
+1、硬盘物理组成
+<1>硬盘由许多圆形硬盘盘组成，依据硬盘盘能容纳的数据量，有所谓的单碟(只有一个硬盘盘)或者多碟(有多个硬盘盘)之分。
+<2>磁头Head：进行硬盘盘上的读写动作。磁头是固定在机械手臂上的，机械手臂上有多个磁头。
+<3>磁道Track：磁头固定不动，硬盘盘转一圈所画出来的圆就是磁道。//实际上是一个圆环
+<4>磁柱Cylinder：所有磁盘盘上面相同半径的磁道组成了磁柱。
+   磁柱是磁盘分割(partition)时的最小单元。
+<5>扇区Sector：由圆心向外画直线，可将磁道细分为一个一个的扇区。
+   扇区是硬盘盘面上最小存储物理量。通常一个扇区大小约为512Bytes。
+   
+计算整个硬盘存储量时，简单计算公式为：磁柱Cylinder * 磁头Head * 扇区Sector * 512Bytes。
+
+<6>硬盘读取时，磁盘盘会转动，利用机械手臂将磁头移到正确的数据位置(单向的前后移动)，然后将数据依序读出。
+在这个操作过程中，如果有抖动或者脏污在磁头和磁盘盘之间，就会造成数据的损毁或者实体磁盘损毁。
+
+<7>操作系统正常关机，可以使机械手臂归回原位置。
+
+2、磁盘分割 (partition)
+<1>记录每一个分割区(partition)的起始和结束磁柱。
+<2>主要开机扇区(Master Boot Recoder,MBR):用于存储硬盘里面的所有分割信息，以及开机管理程序的写入处所。
+   MBR在一块硬盘的第零轨上，也是开机后要利用磁盘时，必须要读取的第一个区域。
+   MBR损毁，磁盘也就不可用了。因为操作系统不知道去哪个磁柱上读取数据。
+<3>MBR的限制：
+	MBR仅提供最多四个磁盘分割(partition)的记录。这就是所谓的Primary(P)和Externed(E)的partition最多只能有四个的原因。
+	Externed(E)最多只能有一个。
+	
+3、档案系统 df -hT
+在告知操作系统磁盘分割 (partition)信息之后，需要将partition格式化为操作系统识别的档案系统(Filesystem)。
+linux标准档案系统是ext2。
+<1>逻辑区块Block：在partition进行filesystem格式化时，所指定的最小存储单位。
+	 block架构在sector上，它的大小为sector的2的次方倍。
+	 一个block最多容乃一个档案。(剩余空间将浪费)
+
+<2>Superblock:每个磁盘分割(partition)就是一个档案系统(Filesystem)，每个档案系统开始位置的那个block就称为Superblock。
+	 superblock用于存储档案系统大小、空的和填满的区块，以及它们各自的总是等信息。
+	 使用partition时，第一个要经过的superblock区块。如果superblock坏了，partition就不能使用。
+	 
+4、linux的EXT2档案系统(inode)
+<1>将每个档案的内容分为两部分，档案属性和档案内容。
+<2>档案属性存放在inode中；档案内容放置在block中。
+   当我们要将一个partition格式化为ext2时就必须指定inode和block的大小才行。
+   
+<3>inode除了记录档案属性外，同时还必须要具有指向(pointer)的功能，指向档案内容所在的block。
+
+<4>目录
+当在linux下的ext2档案系统中建立一个目录时，ext2会分配一个inode与至少一块Block给该目录。
+其中，inode记录该目录的相关属性，并指向分配到的那块Block；而Block则是记录在这个目录下的相关联的档案(或目录)的关联性。
+1)当我们要读取一个档案的内容时，linux会先由根目录"/"取得该档案的上层目录所在的inode，再由该目录所记录的档案关联性(在该目录所属的block区域)
+	取得该档案的inode。
+
+<5>EXT2的几个特点：
+    1)block与inode的数量在一开始格式化时就已经固定了。
+	2)一个partition能容纳的档案数与inode有关，一个inode只能记录一个档案属性。
+	3)一般来说，每4kbytes的硬盘空间分配一个inode。
+	4)一个inode的大小为128bytes
+	5)block大小固定，目前支持1024/2048/4096bytes等
+	6)block越大，损耗硬盘空间越多
+	7)关于单一档案：若 block size=1024，最大容量为 16GB，若 block size=4096，容量最大为 2TB； 
+	8)关于整个 partition：若 block size=1024，则容量达 2TB，若 block size=4096，则容量达 32TB。 
+	9)文件名最长达 255 字符，完整文件名长达 4096 字符。
+	
+5、EXT2/EXT3档案的存取与日志式档案系统的功能
+<1>每个ext2档案系统在建立时，会依据partition大小，给予数个block group。
+<2>每个block group拥有superblock/group description/block bitmap/inode bitmap/inode table/data blocks等区域。
+
+5、linux档案系统的运作
+异步处理方式：如果linux不正常关机，由于内存中的(标记为dirty的)数据，尚未写入磁盘中。
+
+6、挂载点的意义
+例如：将/与/home设定为两个partition的挂在点，/接在/dev/hda1，/home接在/dev/hda2上。
+那么/home底下的所有目录都是使用/dev/hda2那个partition的资料；而非/home的则都是用/dev/hda1的数据。
+
+
+-------------------------------------------------------------------------------------------------------------
+补充：
+1、ls查询档案所记载的时间
+<1>mtime(modification time)：上一次修改文件内容的时间。ls -l看到的就是这个时间
+<2>ctime(status time)：修改文件内容、所有者、权限、链接设置等 保存在inode中的内容的时间。即上一次修改inode内容的时间。
+	ls -l --time=ctime
+<3>atime(access time)：上一次读/执行文件的时间。
+	ls -l --time=atime
+
+2、dumpe2fs //查看inode大小  -- 128 bytes
+
+3、mke2fs  //格式化ext2档案系统
+   
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

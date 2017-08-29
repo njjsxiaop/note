@@ -1,0 +1,84 @@
+一、终端开启256色
+大部分终端模拟器都支持256色，但默认值可能还是8色。
+
+1、xterm开启256色
+<0>安装ncurses-term包
+如果系统默认没有xterm-256color类型，可安装ncurses-term包，里面有许多附加的终端类型定义。
+
+<1>查看终端类型
+$ echo $TERM
+xterm
+
+<2>查看xterm终端支持的颜色
+$ tput colors
+8   //xterm终端默认还是8色的
+
+<3>在~/.bashrc文件添加
+if [ "$TERM" == "xterm" ]; then
+    export TERM=xterm-256color
+fi
+
+<4>修改生效后：
+$ tput colors
+256
+$ echo $TERM
+xterm-256color
+
+2、其他
+<1>图形界面中
+$ echo $TERM
+xterm-256color
+$ tput colors
+256
+
+<2>tty中
+$ echo $TERM
+linux
+$ tput colors
+8
+
+<3>一篇终端相关博客供后续学习
+http://blog.chinaunix.net/uid-26495963-id-3314687.html
+
+二、vim开启256色
+相同的colorschema，vim和gvim的颜色差距很大。gvim使用X颜色，而vim只能使用终端提供的颜色。
+
+1、编辑~/.vimrc文件，添加 set t_Co=256 //t_Co即terminal Color之意
+开启256颜色之后，colorschema在vim里好看了许多，而且与gvim显示的差别不大。
+
+三、CRT配色方案
+http://www.cnblogs.com/zengguowang/p/5809438.html
+http://m.blog.csdn.net/article/details?id=51130889
+1、Options - Session - Terminal - Emulation(仿真) 中选择 xterm 并只勾上 ANSI Color。(Use color scheme表示使用vim配色方案)
+
+2、Options - Global - Terminal - Appearance - ANSI Color
+其中Normal Colors表示ANSI配色方案，Bold Colors表示VIM配色方案。
+
+我们只要配置CRT配色方案，从左到右依次为：
+			  色调  饱和度  亮度
+<1>背景：      128   240    25
+<2>压缩文件：   40   240    60
+<3>可执行文件： 80   240    75
+<4>
+<5>目录：      160   240   148
+<6>图片文件：  200   240    75
+<7>软链接文件：120   240    75
+<8>文字：	   160     0   180
+
+3、字体
+Options - Global options - General - Default session - Edit default - Appearance - Font
+选择 Consolas  常规  12
+
+4、设置完成后，退出CRT，再重新进入。
+
+四、SourceInsight配色方案
+1、设置字体、背景
+字体：options -> document options -> screen fonts，设置为 consolas ，10
+字体颜色：options -> preferences -> colors -> Default text, 颜色设置为 RGB（248，248，242）
+背景颜色：options -> preferences -> colors -> windows background， 颜色设置为 RGB(39, 40, 34)
+
+2、加载配色方案文件
+Options->Style properties->Load
+
+五、NodePad++配色方案
+设置 - 语言格式设置 - 选择主题

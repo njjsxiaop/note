@@ -1,0 +1,13 @@
+对于linux，可以使用paramiko用sftp来上传下载；而windows则不行。
+我们找到了一个变通的方案，使用net use命令搞定，很简单，如下：
+问题解决了
+os.system('net use Z: \\10.43.83.103\set')
+需要加个转义符
+os.system('net use Z: \\\\10.43.83.103\\set')
+这样执行就可以了
+ 
+现在已经实现拷贝了，原来可以如此简单。直接在net use中把用户名密码带进去
+os.system('net use \\\\10.43.83.103\\ipc$ "Password" /user:"ps1_version"')
+source = r"\\10.43.83.103\set\gul.set"
+target = 'E:\Code\python\gul.set'
+shutil.copyfile(source,target)  

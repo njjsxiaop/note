@@ -1,0 +1,8 @@
+与其他数据库不同，MySQL可以运行在不同的SQL Mode(SQL模式)下。
+SQL Mode定义了MySQL应支持的SQL语法、数据校验等，这样可以更容易地在不同环境中使用MySQL。
+
+一、MySQL SQL Mode简介：
+1、MySQL中SQL Mode通常用来解决以下问题：
+<1>通过设置SQL Mode，可以完成不同严格程度的数据校验，有效保障数据准确性。
+<2>通过设置SQL Mode为ANSI模式，保证大多数SQL符合标准的SQL语法，方便应用在不同数据库间迁移。
+<3>通过设置SQL Mode，可以是MySQL中的数据更方便地迁移到目标数据中。(数据库间进行数据迁移)

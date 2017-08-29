@@ -1,0 +1,166 @@
+一、文件读写
+读写文件就是请求操作系统打开一个文件对象(通常称为文件描述符)，
+通过操作系统提供的接口从这个文件对象中读取数据或者将数据写入这个文件对象。
+
+1、读文件
+<1>f = open('/Users/michael/test.txt', 'r') //以读文件的模式打开一个文件对象
+<2>f.read() //调用read()方法一次读取文件全部内容。Python把内容读入内存，用一个str表示。
+<3>f.close() //关闭文件。
+文件对象会占据系统资源，并且同一时间能打开的文件数量也是有限的。因此文件使用完毕后必须关闭。
+
+<4>其他
+1)read(szie)
+read()一次性读取文件的全部内容，为了保险起见，可以反复调用read(size)方法，每次最多读入size个字节。
+
+2)readline()
+每次读取一行
+
+3)readlines()
+一次读取所有内容并按行返回list。适用于读取配置文件。
+
+2、file-like Object
+像open()方法返回的有read()方法的对象，称为file-like Object。
+除了file外，还可以是内存的字节流、网络流、自定义流等等。
+
+StringIO就是在内存中创建的file-like Object，常用作临时缓冲。
+
+3、二进制文件
+前面讲的默认都是读取文件文件，并且是UTF-8编码的文本文件。
+要读取二进制文件(图片、视频等)，用'rb'模式打开文件即可。
+
+4、字符编码
+<1>要读取非UTF-8编码的文本文件，需要给open()方法传入encoding参数。
+f = open('/Users/michael/gbk.txt', 'r', encoding='gbk')
+
+<2>遇到有些编码不规范的文件，你可能会遇到UnicodeDecodeError，因为在文本文件中可能夹杂了一些非法编码的字符。
+遇到这种情况，open()函数还接收一个errors参数，表示如果遇到编码错误后如何处理。
+最简单的方式是直接忽略：
+>>> f = open('/Users/michael/gbk.txt', 'r', encoding='gbk', errors='ignore')
+
+5、写文件
+<1>写文件和读文件是一样的，唯一区别是调用open()函数时，传入标识符'w'或者'wb'表示写文本文件或写二进制文件。
+
+<2>务必要调用f.close()来关闭文件。
+当我们写文件时，操作系统往往不会立刻把数据写入磁盘，而是放到内存缓存起来，空闲的时候再慢慢写入。
+只有调用close()方法时，操作系统才保证把没有写入的数据全部写入磁盘。
+忘记调用close()的后果是数据可能只写了一部分到磁盘，剩下的丢失了。
+
+6、使用with语句
+Python引入了with语句来自动帮我们调用close()方法：
+
+with open('/path/to/file', 'r') as f:
+    print(f.read())
+
+with open('/Users/michael/test.txt', 'w') as f:
+    f.write('Hello, world!')
+	
+这和前面的try ... finally是一样的，但是代码更佳简洁，并且不必调用f.close()方法。
+
+
+二、StringIO和BytesIO
+很多时候，数据读写不一定是文件，也可以是在内存中读写。
+
+1、StringIO就是在内存中读写str
+
+2、BytesIO
+StringIO操作的只能是str，如果要操作二进制数据，就需要BytesIO。
+
+三、操作文件和目录
+1、os模块
+<1>系统信息
+>>> import os
+>>> os.name
+'posix'
+如果是posix，说明系统是Linux、Unix或Mac OS X；如果是nt，就是Windows系统。
+
+>>> os.uname() //查看详细信息
+posix.uname_result(sysname='Linux', nodename='rcp.zte.com', release='3.10.0-327.10.1.el7.x86_64', version='#1 SMP Tue Feb 16 17:03:50 UTC 2016', machine='x86_64')
+
+<2>环境变量
+>>> os.environ //显示所有环境变量
+
+>>> os.environ.get('key')  //查阅某个环境变量的值
+
+2、操作文件和目录
+操作文件和目录的函数一部分放在os模块中，一部分放在os.path模块中。
+
+目录操作
+<1>os.path.abspath('.')   //查看当前目录的绝对路径
+<2>os.mkdir('/Users/michael/testdir')  //创建目录
+<3>os.rmdir('/Users/michael/testdir')  //删除目录
+
+路径操作（这些合并、拆分路径的函数并不要求目录和文件要真实存在，它们只对字符串进行操作）
+<4>os.path.join('/Users/michael', 'testdir')  //合并路径
+'/Users/michael/testdir'
+<5>os.path.split('/Users/michael/testdir/file.txt')  //拆分路径
+('/Users/michael/testdir', 'file.txt') //后一部分总是最后级别的目录或文件名
+<6>os.path.splitext('/path/to/file.txt')  //直接得到扩展名
+('/path/to/file', '.txt')
+
+文件操作
+<7>os.rename('test.txt', 'test.py')  //重命名
+<8>os.remove('test.py')        //删除
+
+3、复制文件
+os模块中没有复制文件的函数，shutil模块提供了copyfile()函数。
+还可以在shutil模块中找到很多实用函数，它们可以看做是os模块的补充。
+
+4、应用
+<1>列出当前目录下所有的.py文件只需一行代码：
+>>> [x for x in os.listdir('.') if os.path.isfile(x) and os.path.splitext(x)[1]=='.py']
+['apis.py', 'config.py', 'models.py', 'pymonitor.py', 'test_db.py', 'urls.py', 'wsgiapp.py']
+
+
+四、序列化
+把变量从内存中变成可存储或传输的过程称之为序列化，在Python中叫pickling，在其他语言中也被称之为serialization，marshalling，flattening等等。
+序列化之后，就可以把序列化后的内容写入磁盘，或者通过网络传输到别的机器上。
+反过来，把变量内容从序列化的对象重新读到内存里称之为反序列化，即unpickling。
+
+1、Python提供了pickle模块实现序列化
+pickle.dumps()/pickle.loads()
+
+2、JSON
+如果我们要在不同的编程语言之间传递对象，就必须把对象序列化为标准格式，比如XML，但更好的方法是序列化为JSON。
+JSON表示出来就是一个字符串，可以被所有语言读取，也可以方便地存储到磁盘或者通过网络传输。
+JSON不仅是标准格式，并且比XML更快，而且可以直接在Web页面中读取，非常方便。
+
+1、JSON表示的对象就是标准的JavaScript语言的对象，JSON和Python内置的数据类型对应如下：
+JSON类型	Python类型
+{}			dict
+[]			list
+"string"	str
+1234.56		int或float
+true/false	True/False
+null		None
+
+2、Python内置的json模块提供了非常完善的Python对象到JSON格式的转换。
+>>> import json
+>>> d = dict(name='Bob', age=20, score=88)
+>>> json.dumps(d)
+'{"age": 20, "score": 88, "name": "Bob"}'
+dumps()方法返回一个str，内容就是标准的JSON。
+类似的，dump()方法可以直接把JSON写入一个file-like Object。
+
+要把JSON反序列化为Python对象，用loads()或者对应的load()方法，
+前者把JSON的字符串反序列化，后者从file-like Object中读取字符串并反序列化：
+>>> json_str = '{"age": 20, "score": 88, "name": "Bob"}'
+>>> json.loads(json_str)
+{'age': 20, 'score': 88, 'name': 'Bob'}
+由于JSON标准规定JSON编码是UTF-8，所以我们总是能正确地在Python的str与JSON的字符串之间转换。
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

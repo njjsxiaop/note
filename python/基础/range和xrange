@@ -1,0 +1,48 @@
+一、Python2.X
+这两个基本上都是在循环的时候用：
+当要生成很大的数字序列时，xrange会比range性能优很多，因为不需要一开始就开辟一块很大的内存空间。
+再循环中尽量使用xrange，这样性能可以得到提高，除非你要返回一个列表。
+
+1、range
+函数说明：range([start,] stop[, step])，根据start与stop指定的范围(包含start，不包含stop)以及step设定的步长，生成一个列表。 
+>>> s = range(10)
+>>> s
+[0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+
+>>> s = range(0,10,2)
+>>> s
+[0, 2, 4, 6, 8]
+
+2、xrange
+函数说明：和range的用法完全相同，只是返回的是一个生成器。 
+>>> t = xrange(10)
+>>> t
+xrange(10)
+>>> list(t)
+[0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+
+二、python 3.x
+将xrange和range合并，合并后的range与之前的xrange相同。
+>>> s = range(10)
+>>> s
+range(0, 10)
+>>> list(s)
+[0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+
+
+注：无论是2.x中的xrange还是3.x中range，都不能使用next()。xrange/range对象不是迭代器。
+>>> t = xrange(10)
+>>> t
+xrange(10)
+>>> next(t)
+Traceback (most recent call last):
+  File "<stdin>", line 1, in <module>
+TypeError: xrange object is not an iterator
+
+>>> s = range(10)
+>>> s
+range(0, 10)
+>>> next(s)
+Traceback (most recent call last):
+  File "<stdin>", line 1, in <module>
+TypeError: 'range' object is not an iterator

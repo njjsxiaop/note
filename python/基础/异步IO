@@ -1,0 +1,141 @@
+一、协程
+协程(coroutine)又称为微线程，纤程。
+
+1、执行过程中，协程内部可以中断，然后转而执行别的子程序，在适当的时候再返回来接着执行。
+
+2、协程并不是多线程，而是在一个线程中执行。
+<1>协程执行效率高。子程序切换不是线程切换，而是程序自身控制。因此没有线程切换的开销。
+<2>不需要锁机制。因为只有一个线程，不存在同时写变量冲突。
+协程中控制共享资源不需要加锁，只需要判断状态。
+
+3、利用多核CPU
+多进程+协程
+
+4、Python对协程的支持是通过generator实现的
+yield不但可以返回一个值，还可以接收调用者发出的参数。
+c = consumer()
+produce(c)
+c.send(n)
+c.close()
+
+5、子程序就是协程的一种特例！
+
+二、asyncio
+asyncio是python3.4引入的标准库，直接内置了对异步IO的支持。
+
+1、asyncio实现hello world
+
+from time import ctime
+import asyncio
+
+@asyncio.coroutine
+
+def hello():
+    print('Hello World! %s' % ctime())
+    r = yield from asyncio.sleep(10)
+    print("Hello Again! %s" % ctime())
+
+def main():
+    loop = asyncio.get_event_loop()
+    loop.run_until_complete(hello())
+    loop.close()
+
+if __name__ == '__main__':
+    main()
+
+结果：
+Hello World! Mon Jun 12 23:16:24 2017
+Hello Again! Mon Jun 12 23:16:34 2017
+
+<1>asyncio的编程模型就是一个消息循环。
+我们从asyncio模块中直接获取一个EventLoop的引用，然后把需要执行的协程扔到EventLoop中执行，就实现了异步IO。
+
+<2>yield from语法可以调用另一个generator。asyncio.sleep()也是一个coroutine。
+------------------------------------------------------------------------------------------
+补充：
+1、yield from  http://blog.csdn.net/u010161379/article/details/51645264
+允许一个generator将其部分操作委派给另一个generator。
+使生成器能够容易地分为多个拥有send和throw方法的子生成器，就像一个大函数分为多个子函数。
+<1>虽然yield from设计的目的是向子生成器委派操作任务，但yield from可以向任意的可迭代对象委派操作。
+可迭代对象(子生成器)产生的值直接返给调用者。
+------------------------------------------------------------------------------------------
+
+2、用task封装两个coroutine
+
+import threading
+import asyncio
+
+@asyncio.coroutine
+def hello():
+    print('hello world! (%s)' % threading.currentThread())
+    yield from asyncio.sleep(5)
+    print('hello again! (%s)' % threading.currentThread())
+
+def main():
+    loop = asyncio.get_event_loop()
+    tasks = [hello(),hello()]
+    loop.run_until_complete(asyncio.wait(tasks))
+    loop.close()
+
+if __name__ == '__main__':
+    main()
+
+结果：
+hello world! (<_MainThread(MainThread, started 139968786810624)>)
+hello world! (<_MainThread(MainThread, started 139968786810624)>)
+hello again! (<_MainThread(MainThread, started 139968786810624)>)
+hello again! (<_MainThread(MainThread, started 139968786810624)>)
+
+可以看出两个coroutine是由同一个线程并发执行的。
+
+3、总结
+asyncio提供了完善的异步IO支持；
+异步操作需要在coroutine中通过yield from完成；
+多个coroutine可以封装成一组Task然后并发执行。
+
+三、saync/await
+1、为了简化并更好地标识异步I/O，Python3.5开始引入新的语法async和await。
+只需要作两步简单的替换：
+<1>把@asyncio.coroutine替换为async
+<2>把yield from替换为await
+old:
+
+@asyncio.coroutine
+def hello():
+    print("Hello world!")
+    r = yield from asyncio.sleep(1)
+    print("Hello again!")
+	
+new:
+
+async def hello():
+    print("Hello world!")
+    r = await asyncio.sleep(1)
+    print("Hello again!")
+
+四、aiohttp
+1、asyncio实现了TCP、UDP、SSL等协议，aiohttp则是基于asyncio实现的HTTP框架。
+pip install aiohttp
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

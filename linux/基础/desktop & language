@@ -1,0 +1,85 @@
+一、安装桌面
+1、Linux下两种桌面环境的简单介绍:
+<1>KDE
+KDE(Kool Desktop Environment)项目始建于1996年10月，相对于GNOME还要早一些。
+KDE项目是由图形排版工具Lyx的开发者、一位名为Matthias Ettrich的德国人发起的，
+目的是为满足普通用户也能够通过简单易用的桌面来管理Unix工作站上的各种应用软件以及完成各种任务。
+
+<2>GNOME
+GNOME(GNU Network Object Model Environment)计划发起于1997年8月，所以，你可以在GNOME的LOGO上见到1997的字样。
+发起人是Miguel de Icaza和Federico Mena，GNOME计划当初的目标就是完全基于自由软件，构造那种功能完善、操作简单以及界面友好的桌面环境，
+希望走国际化道路，尽可能多地为各种国家的人所使用。目前，GNOME已经基本上可以成为KDE的替代品。
+
+2、在CentOS 5与CentOS 6上与桌面环境相关的套件组名不太一样：
+1)CentOS 5.x:
+GNOME: GNOME Desktop Environment
+KDE: KDE (K Desktop Environment)
+
+2)CentOS 6.x:
+GNOME: Desktop
+KDE: KDE Desktop
+
+3、X Window System
+X Window System(也常称为X11或X)是一种以位图方式显示的软件窗口系统。
+最初是1984年麻省理工学院的研究，之后变成UNIX、类UNIX、以及OpenVMS等操作系统所一致适用的标准化软件工具包及显示架构的运作协议。
+X Window系统通过软件工具及架构协议来建立操作系统所用的图形用户界面，此后则逐渐扩展适用到各形各色的其他操作系统上。
+现在几乎所有的操作系统都能支持与使用X。更重要的是，今日知名的桌面环境——GNOME和KDE也都是以X Window系统为基础建构成的。
+
+4、GNOME桌面环境安装：
+[root@bogon ~]# yum -y groupinstall "X Window System"    #这是窗口管理程序，目前系统中已安装了xorg，所以可以不用安装
+[root@bogon ~]# yum -y groupinstall "Desktop"            #要安装KDE环境时把这里换成相应的套件组名
+[root@serv01 ~]# startx         #字符界面下启动图形界面
+                 Ctrl+Alt+Back  #图形界面下退回字符界面
+				 
+yum groupremove "Desktop"
+yum groupremove "KDE Desktop"
+
+5、linux最小安装或者普通安装时可能没有安装某些组件
+<1>yum grouplist | more //可以查看已安装和未安装的组件group
+<2>选择需要的组件grop，执行yum groupinstall "***"
+eg:  yum group install "安全工具"
+
+<3>Another app is currently holding the yum lock; waiting for it to exit...
+rm -rf /var/run/yum.pid
+				 
+二、vnc使用
+1、server
+<1>安装图形界面，如一中步骤
+<2>安装tigervnc-server.x86_64
+<3>设置密码
+[rdbtest2@bogon root]$ vncpasswd     //可以在多个用户下执行，设置不同用户的不同密码，如分别为root和rdbtest2设置vnc密码
+<4>设置vncservers配置文件/etc/sysconfig/vncservers  
+在最后增加 VNCSERVERS="1:root 2:rdbtest2"
+
+<5>可选：
+一些资料上说建议修改用户家目录下的“~/.vnc/xstartup”文件的最后的“twm &”，把这行替换成“gnome-seesion &”，
+如果是KDE桌面那就修改成“startKDE &”。
+twm                   启动twm窗口管理器
+gnome-seesion         启动gnome的窗口管理器
+startKDE              启动KDE的窗口管理器
+但我没有发现有什么区别。
+
+<6>启动vncserver服务：service vncserver start
+
+<7>其他
+[root@bogon ~]# vncserver -kill :2  #强制结束进程
+Killing Xvnc process ID 3405
+
+[root@bogon ~]# vncserver :2  #重新启动rdbtest2的vnc服务
+
+2、client
+直接使用vncviewer连接server。
+
+
+三、系统语言设置
+1、RedHat 6.5
+<1>查看当前使用的系统语言
+echo $LANG
+<2>查看系统安装的语言包
+locale   //有zh_CN表示已经安装了中文语言，如果没有中文语言，可以执行如下指令，安装中文语言包
+yum groupinstall "Chinese Support"
+<3>临时更换语言,可以通过输入设置 LANG=语言名称，如下
+LANG="Zn_CN.UTF-8"
+<4>修改系统默认语言（注意改好之后重启一下系统！！！） 
+echo  "LANG=\"zh_CN.UTF-8\"" >> /etc/sysconfig/i18n
+

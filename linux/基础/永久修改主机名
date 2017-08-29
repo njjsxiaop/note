@@ -1,0 +1,21 @@
+一、centos 7
+<1>修改/etc/hostname文件，把localhost.hostname改成你想要的值。
+<2>运行 su - 命令重载环境
+
+二、centos 6.5
+1、临时方法，重启失效
+hostname master //hostname改为master
+
+2、永久有效
+<1>修改/etc/sysconfig/network中的hostname
+<2>修改/etc/hosts文件  127.0.0.1  master localhost
+	特别说明：可以不改127.0.0.1后面的默认主机名。改了的话可能会有某些网络应用误把主机master解析到127.0.0.1上去，导致运行失败，当然个人认为可能性比较低。
+	可以在对本机设置IP后，在/etc/hosts的最后加一行: “IP 主机名”，这样也可以实现。
+<3>重启使修改生效
+
+三、其他
+hostname命令  //临时修改或查询主机名
+<1>不带参数显示主机名
+<2>-i参数显示ip地址
+<3>-f参数显示全域名（FQDN，Fully Qualified Domain Name）
+<4>后面接主机名时，临时修改主机名

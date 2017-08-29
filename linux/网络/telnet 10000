@@ -1,0 +1,6 @@
+http://blog.csdn.net/crazycoder8848/article/details/49406451
+http://blog.csdn.net/benpaobagzb/article/details/50768535
+
+1、某些应用支持通过telnet查看程序中的变量及执行调式函数，inux_dev_framework软件包中的telnetd4dbg_test.c就是一个实现示例。
+该程序运行后，用户通过telnet 127.1 10000即可登陆到此程序的调试shell环境中，
+然后即可“输入变量名”查看变量值，或者“输入变量名=值”以修改变量的值，或者“执行调试函数”。

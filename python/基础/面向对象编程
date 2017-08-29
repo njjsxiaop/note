@@ -1,0 +1,226 @@
+一、类和实例
+类是抽象的模板，而实例是根据类创建出来的一个个具体的对象。同一个类的每个对象拥有相同的方法，但各自的数据可能不同。
+
+1、定义类
+class Student(object):
+	pass
+	
+//通常没有合适的继承类，就使用object类，所有类最终都会继承object类。
+
+2、创建实例
+定义好Student类，就可以根据Student类创建出Student实例。
+>>> bart = Student()
+>>> bart
+<__main__.Student object at 0x10a67a590>
+>>> Student
+<class '__main__.Student'>
+可以看到，变量bart指向的就是一个Student的实例，后面的0x10a67a590是内存地址，每个object的地址都不一样，而Student本身则是一个类。
+
+<1>可以自由地给一个实例变量绑定属性：
+>>> bart.name = 'Bart Simpson'
+>>> bart.name
+'Bart Simpson'
+
+>>> jim = student()
+>>> jim.name
+Traceback (most recent call last):
+  File "<stdin>", line 1, in <module>
+AttributeError: 'student' object has no attribute 'name'
+//和静态语言不同，Python允许对实例变量绑定任何数据。虽然它们是同一个类的不同实例，但拥有的变量名称可能不同。
+(这里的变量就是属性)
+
+<2>类中通过__init__方法，在创建实例时，把一些必须绑定的属性强制写入。
+def __init__(self, name, score):
+	self.name = name
+    self.score = score
+
+1)__init__方法的第一个参数永远是self，表示创建的实例本身。所以，在__init__内部把各种属性绑定到self。
+2)有了__init__方法，创建实例时就不能传入空的参数了，必须传入与__init__方法匹配的参数。
+但不需要传入self，Python解释器自己会把实例变量传入。
+3)和普通函数相比，类中定义的函数只有一点不同，即第一个参数永远是实例变量self。
+
+3、数据封装
+<1>这些封装数据的函数和类本身相关联，因此称为类的方法。
+<2>方法可以直接访问实例的数据。
+<3>通过在实例上调用方法，就直接操作了对象内部的数据，但无需知道方法内部的实现细节。
+
+二、访问限制
+class内部有属性和方法，外部代码可以直接调用实例变量的方法来操作数据，这样就隐藏了内部的复杂逻辑。
+
+1、限制外部代码直接修改实例的属性
+<1>如果要让内部属性不被外部访问，可以在属性名称前加上__，将其变为私有变量。
+class Student(object):
+    def __init__(self, name, score):
+        self.__name = name
+        self.__score = score
+
+    def print_score(self):
+        print('%s: %s' % (self.__name, self.__score))
+
+>>> bart = Student('Bart Simpson', 98)
+>>> bart.__name
+Traceback (most recent call last):
+  File "<stdin>", line 1, in <module>
+AttributeError: 'Student' object has no attribute '__name'
+
+这样就能确保外部代码不能随意修改对象内部的状态，通过访问限制的保护，代码更加健壮。
+----------------------------------------------------------------------------------------------
+补充说明：
+<0>变量名类似__xxx__的，也就是以双下划线开头，并且以双下划线结尾的，是特殊变量，
+特殊变量是可以直接访问的，private变量不能用__name__、__score__这样的变量名。
+
+<1>以一个下划线开头的实例变量，比如_name，这样的实例变量外部是可以访问的，
+但按照约定，“虽然我可以被访问，但是，请把我视为私有变量，不要随意访问”。
+
+<2>以双下划线开头的实例变量(eg:__name)之所以不能从外部访问，
+是因为Python解释器对外把__name变量的变量名改成了"_+类名+变量名"(_Student__name)，
+所以，仍然可以通过_Student__name来访问__name变量：
+>>> bart._Student__name
+'Bart Simpson'
+但是强烈建议你不要这么干，因为不同版本的Python解释器可能会把__name改成不同的变量名。
+----------------------------------------------------------------------------------------------
+
+三、继承和多态
+1、继承
+子类可以获得父类的全部功能。
+
+2、多态
+当子类和父类都存在相同的方法时，子类的方法覆盖父类的方法。
+<1>定义一个class时，实际上就定义了一种数据类型。我们定义的数据类型和Python自带的类型没什么两样。
+<2>判断一个变量是否是某个类型可以用isinstance()判断。
+eg:
+b = Animal() # b是Animal类型
+c = Dog() # c是Dog类型
+>>> isinstance(b, Animal)
+True
+>>> isinstance(c, Dog)
+True
+
+注意：
+>>> isinstance(c, Animal)
+True
+//c不仅仅是Dog类型，还是Animal类型。因为Dog类继承了Animal类。
+
+<3>如果一个实例的数据类型是某个子类，那么它的数据类型也可以被看做是父类。
+
+3、静态语言和动态语言
+<1>对于静态语言，如果需要传入Animal类型，则传入的对象必须是Animal类型或者它的子类。
+<2>对于Python这样的动态语言，不一定需要传入Animal类型，只需要保证传入的对象有run()方法即可。
+这就是动态语言的"鸭子类型"，它并不要求严格的继承体系。一个对象只要"看起来像鸭子，走起路来像鸭子"，那它就可以被看做是鸭子。
+
+<3>动态语言的鸭子类型特点决定了继承不像静态语言那样是必须的。
+
+
+四、获取对象信息
+1、使用type()函数判断对象类型。
+>>> type('123')
+<class 'str'>
+>>> type(123)  
+<class 'int'>
+>>> type(None)
+<class 'NoneType'>
+>>> type(abs)	//变量指向函数
+<class 'builtin_function_or_method'>
+>>> type(a)		//变量指向类
+<class '__main__.A'>
+
+<1>type()函数返回对应的Class类型。
+>>> type(123)==type(456)
+True
+>>> type('abc')==str
+True
+>>> type('abc')==type(123)
+False
+
+<2>判断对象是否是函数，可以使用types模块中定义的常量：
+>>> import types
+>>> def fn():
+...     pass
+...
+>>> type(fn)==types.FunctionType
+True
+>>> type(abs)==types.BuiltinFunctionType
+True
+>>> type(lambda x: x)==types.LambdaType
+True
+>>> type((x for x in range(10)))==types.GeneratorType
+True
+
+2、使用isinstance()函数。
+<1>判断的是一个对象是否是该类型本身，或者位于该类型的父继承链上。
+
+<2>能用type()判断的基本类型也可以使用isinstance()判断。
+>>> isinstance('a', str)
+True
+>>> isinstance(123, int)
+True
+>>> isinstance(b'a', bytes)
+True
+>>> isinstance(abs,types.BuiltinFunctionType)
+True
+
+<3>判断一个变量是否是某些类型中的一种。
+>>> isinstance([1, 2, 3], (list, tuple))
+True
+>>> isinstance((1, 2, 3), (list, tuple))
+True
+
+3、使用dir()函数获得一个对象的所有属性和方法。
+返回一个包含字符串的list。
+>>> dir('123')
+<1>类似__XXX__的属性和方法在Python中都是有特殊用途的。
+eg: __len__()方法返回长度。
+在Python中如果调用len()函数视图获取一个对象的长度，len()函数内部会去调用该对象的__len__()方法。
+所以下面是等价的：
+>>> len('ABC')
+3
+>>> 'ABC'.__len__()
+3
+
+<2>配合内置函数getattr()、setattr()、hasattr()可以直接操作一个对象的状态。
+传入default参数，如果属性不存在就返回默认值：
+>>> getattr(obj, 'z', 404) # 获取属性'z'，如果不存在，返回默认值404
+404
+
+五、实例属性和类属性
+1、由于Python是动态语言，可以给实例绑定任意属性和方法。
+(给一个实例绑定的属性和方法，对另一个实例是不起作用的。)
+s = Student('Bob')
+s.score = 90
+
+2、可以直接在class中定义属性，该属性是类属性。
+class Student(object):
+    name = 'Student'
+
+3、实例属性和类属性不要使用相同的名称，相同名称的实例属性将屏蔽掉类属性，
+只有当删除实例属性(del s.name)后，才能访问到类属性。
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

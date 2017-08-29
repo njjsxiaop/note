@@ -1,0 +1,37 @@
+1、ethtool命令    http://man.linuxde.net/ethtool
+用于获取/配置网卡的信息。
+ethtool命令显示的信息来源于网卡驱动层，即TCP/IP协议的链路层。
+
+ethtool ethX
+
+2、ip命令
+http://blog.csdn.net/qihuanfengyun/article/details/5507835
+2.1、ip link //关于设备 (device) 的相关设定，包括 MTU, MAC 地址等等
+1、ip link set dev eth0 up //这个等于传统的 # ifconfig eth0 up(down)
+2、[root@linux ~]# ip link set eth0 down       <==关闭设备
+   [root@linux ~]# ip link set eth0 name vbird <==重新设定
+   [root@linux ~]# ip link show                <==查看信息
+
+2.2、ip addr //关于额外的 IP 设定，例如多 IP 的实现等等
+
+2.3、ip route //与路由有关的相关设定
+
+2.4、ip netns
+1、ip netns list
+2、ip netns add/delete nstest
+3、ip netns exec nstest bash //进入nstest net namespace，默认只会创建一个回环设备lo，该设备不启动。用户最好将其启动。ip netns exec nstest ip link set dev lo up
+4、<1>ip link add name ns1-nic type veth peer name ns1-vnic //添加一对veth设备，veth设备是成对出现的，两个设备之间的数据是相互贯通的。
+      ip link set ns1-vnic netns nstest //把ns1-vnic加入到ns1网络空间中。
+      ip netns exec nstest ip link set ns1-vnic name eth0
+                           ip addr add 10.0.0.100/24 dev eth0
+		    			   ip link set eth0 up
+   <2>brctl addbr testbr//创建网桥
+      ip link set testbr up
+      brctl addif testbr ns1-nic//将ns1-nic加入网桥
+      ip link set ns1-nic up
+	  ip addr add 10.0.0.1/24 dev testbr//给网桥一个地址
+   <3>此时网桥和nstest可以ping通
+   
+3、nslookup  //用了域名服务器后，经常要查询域名的解析情况，nslookup是常用工具之一
+有时候配置/etc/resolv.conf后，仍然不能访问，可以通过该方法：
+nslookup解析出ip后，可以将其写入/etc/hosts中。

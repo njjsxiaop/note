@@ -1,0 +1,864 @@
+一、概念：
+1、LVM(Logical Volume Manager,逻辑卷管理),将一个或多个硬盘的分区在逻辑上集合，相当于一个大硬盘来使用，当硬盘的空间不够使用的时候，
+可以继续将其它的硬盘的分区加入其中，这样可以实现磁盘空间的动态管理，相对于普通的磁盘分区有很大的灵活性。
+
+2、与传统的磁盘与分区相比，LVM为计算机提供了更高层次的磁盘存储。它使系统管理员可以更方便的为应用与用户分配存储空间。
+在LVM管理下的存储卷可以按需要随时改变大小与移除(可能需对文件系统工具进行升级)。
+LVM也允许按用户组对存储卷进行管理，允许管理员用更直观的名称(如"sales'、 'development')代替物理磁盘名(如'sda'、'sdb')来标识存储卷。
+
+二、相关命令
+1、lvdisplay 
+<1>用于显示LVM(Logic Volume Manager,逻辑卷管理)逻辑卷空间大小、读写状态和快照信息等熟悉。若省略“逻辑卷”参数，则显示所有的逻辑卷属性。
+<2>用法：lvdisplay + 逻辑卷
+<3>eg:
+[root@opencos project]# lvdisplay 
+  --- Logical volume ---
+  LV Path                /dev/centos/swap
+  LV Name                swap
+  VG Name                centos
+  LV UUID                9axh88-JP2m-hL9P-nhjk-Cqco-l67s-cEeW2v
+  LV Write Access        read/write
+  LV Creation host, time localhost, 2014-10-15 14:52:16 +0800
+  LV Status              available
+  # open                 2
+  LV Size                2.03 GiB
+  Current LE             520
+  Segments               1
+  Allocation             inherit
+  Read ahead sectors     auto
+  - currently set to     8192
+  Block device           253:0
+   
+  --- Logical volume ---
+  LV Path                /dev/centos/home
+  LV Name                home
+  VG Name                centos
+  LV UUID                Corf4H-7CrN-0hgK-Pqqe-2ELf-SuZf-gr1076
+  LV Write Access        read/write
+  LV Creation host, time localhost, 2014-10-15 14:52:17 +0800
+  LV Status              available
+  # open                 1
+  LV Size                18.86 GiB
+  Current LE             4827
+  Segments               1
+  Allocation             inherit
+  Read ahead sectors     auto
+  - currently set to     8192
+  Block device           253:1
+   
+  --- Logical volume ---
+  LV Path                /dev/centos/root
+  LV Name                root
+  VG Name                centos
+  LV UUID                1TmXpz-tXjc-tgIX-rftG-1mSA-ibEi-HJWfs5
+  LV Write Access        read/write
+  LV Creation host, time localhost, 2014-10-15 14:52:17 +0800
+  LV Status              available
+  # open                 1
+  LV Size                57.62 GiB
+  Current LE             14751
+  Segments               2
+  Allocation             inherit
+  Read ahead sectors     auto
+  - currently set to     8192
+  Block device           253:2
+
+可以看到三个LVM，分别是创建虚机时设置三个分区 / /home /swap
+
+2、pvdisplay
+<1>用于显示物理卷的属性。包括物理卷名称、所属卷组、物理卷大小等。
+<2>用法： pvdisplay + 物理卷
+<3>eg:
+[root@opencos project]# pvdisplay 
+  --- Physical volume ---
+  PV Name               /dev/vda2
+  VG Name               centos
+  PV Size               59.51 GiB / not usable 3.00 MiB
+  Allocatable           yes (but full)
+  PE Size               4.00 MiB
+  Total PE              15234
+  Free PE               0
+  Allocated PE          15234
+  PV UUID               1kakCd-Vsts-VXni-07X8-vw48-A89b-6N2Xce
+   
+  --- Physical volume ---
+  PV Name               /dev/vda3
+  VG Name               centos
+  PV Size               20.00 GiB / not usable 4.00 MiB
+  Allocatable           yes 
+  PE Size               4.00 MiB
+  Total PE              5119
+  Free PE               255
+  Allocated PE          4864
+  PV UUID               sZPDfb-wI9F-Jbzf-K9c6-6XM5-eNDL-PNMftj
+
+3、vgdisplay
+<1>用于显示LVM卷组的信息。如果不指定卷组，则分别显示所有卷组的属性。
+<2>用法：vgdisplay + 卷组
+<3>eg
+[root@opencos lib]# vgdisplay 
+  --- Volume group ---
+  VG Name               centos
+  System ID             
+  Format                lvm2
+  Metadata Areas        2
+  Metadata Sequence No  6
+  VG Access             read/write
+  VG Status             resizable
+  MAX LV                0
+  Cur LV                3
+  Open LV               3
+  Max PV                0
+  Cur PV                2
+  Act PV                2
+  VG Size               79.50 GiB
+  PE Size               4.00 MiB
+  Total PE              20353
+  Alloc PE / Size       20098 / 78.51 GiB
+  Free  PE / Size       255 / 1020.00 MiB
+  VG UUID               Z1Tils-Vc1c-nTVy-W9q0-VVyN-Q5s9-bYetWw
+
+4、partprobe 工具
+<1>使用fdisk或者其他命令创建一个新的分区，然后使用partprobe命令重新读取分区表。
+<2>用法
+partprobe - inform the OS of partition table changes
+DESCRIPTION
+       This manual page documents briefly the partprobe command.
+       partprobe is a program that informs the operating system kernel of partition table changes, 
+	   by requesting that the operating system re-read the partition table.
+<3>eg
+partprobe /dev/sdb
+  
+5、pvcreate
+<1>用于将磁盘分区初始化为物理卷，以便LVM使用
+<2>用法：pvcreate + 磁盘分区  
+	-f :强制创建物理卷，不需要用户确认
+	-u :指定设备的UUID
+	-y :所有的问题都回答yes
+<3>eg:
+pvcreate /dev/vda3 
+
+<4>删除物理卷：pvremove /dev/vda3
+<5>修改物理卷属性：pvchange
+	
+6、vgextend
+<1>用于动态扩展LVM卷组，向卷组中添加物理卷来增加卷组容量。
+	LVM卷组中的物理卷可以在使用vgcreate命令创建卷组时添加，也可以使用vgextend命令动态添加。
+<2>用法：vgextend 卷组 物理卷列表
+	-d:调试模式
+	-t:仅测试
+<3>eg:
+vgextend centos /dev/vda3
+输出： Volume group "centos" successfully extended
+
+7、lvextend
+<1>用于在线动态扩展逻辑卷的空间大小，从而不中断应用程序对逻辑卷的访问。整个空间扩展对应用程序来说完全透明。
+<2>用法：lvextend 逻辑卷
+	-L:指定逻辑卷的大小，单位Kk Mm Gg Tt字节
+	-l:指定逻辑卷的大小(LE数)
+<3>eg:
+lvextend -L+19G /dev/centos/root
+输出：Size of logical volume centos/root changed from 38.62 GiB (9887 extents) to 57.62 GiB (14751 extents).
+      Logical volume root successfully resized.
+
+8、resize2fs
+<1>用于增大或收缩未加载的ext2、ext3文件系统的大小。如果文件系统是处于mount状态下，那么它只能做到扩容。
+	前提条件是内核支持在线resize。linux kernel 2.6支持在mount状态下扩容但仅限于ext3文件系统。
+<2>用法：resize2fs 设备文件名(要调整的文件系统所对应的设备文件名)
+	-d：打开调试特性；
+	-p：打印已完成的百分比进度条； 
+	-f：强制执行调整大小操作，覆盖掉安全检查操作； 
+	-F：开始执行调整大小前，刷新文件系统设备的缓冲区。
+<3>eg
+resize2fs /dev/vbirdvg/vbirdlv
+resize2fs 1.39 (29-May-2006) 
+Filesystem at /dev/vbirdvg/vbirdlv is mounted on /mnt/lvm; on-line resizing 
+Performing an on-line resize of /dev/vbirdvg/vbirdlv to 2191360 (4k) blocks. 
+The filesystem on /dev/vbirdvg/vbirdlv is now 2191360 blocks long.
+
+9、xfs_growfs  https://linux.cn/article-3997-1.html
+<1>扩展XFS文件系统，XFS已被最新的CentOS/RHEL 7采用，成为其默认的文件系统。
+	在其众多的特性中，包含了“在线调整大小”这一特性，使得现存的XFS文件系统在已经挂载的情况下可以进行扩展。
+	然而，对于XFS文件系统的缩减却还没有支持。
+	要扩展一个现存的XFS文件系统，你可以使用命令行工具xfs_growfs。
+	
+<2>用法：
+作为目标XFS文件系统来扩展，你可以指定挂载点、磁盘分区或者逻辑卷(在使用LVM时)，使用数据块数量来指定新的XFS文件系统的大小。
+你可以使用xfs_info命令行工具来检查数据块大小和数量：xfs_info /dev/centos/root
+   	
+<3>eg：
+xfs_growfs /dev/centos/root -D 1986208 //将XFS文件扩展到1986208
+如果你不使用“-D”选项来指定大小，xfs_growfs将会自动扩展XFS文件系统到最大的可用大小。
+
+<4>注：
+注意，当你扩展一个现存的XFS文件系统时，必须准备好事先添加用于XFS文件系统扩展的空间。
+如果在所在的分区或磁盘卷上没有空闲空间可用的话，xfs_growfs就没有办法了。
+同时，如果你尝试扩展XFS文件系统大小到超过磁盘分区或卷的大小，xfsgrowfs将会失败。
+
+[root@opencos lib]# xfs_growfs /dev/centos/root 
+meta-data=/dev/mapper/centos-root isize=256    agcount=4, agsize=2531072 blks
+         =                       sectsz=512   attr=2, projid32bit=1
+         =                       crc=0        finobt=0
+data     =                       bsize=4096   blocks=10124288, imaxpct=25
+         =                       sunit=0      swidth=0 blks
+naming   =version 2              bsize=4096   ascii-ci=0 ftype=0
+log      =internal               bsize=4096   blocks=4943, version=2
+         =                       sectsz=512   sunit=0 blks, lazy-count=1
+realtime =none                   extsz=4096   blocks=0, rtextents=0
+data blocks changed from 10124288 to 15105024
+
+三、LVM一些概念
+1、磁盘、分区、物理卷  [物理部分]
+<1>物理卷(Physical Volume,PV)：磁盘分区，也可以是整个磁盘或已创建的软RAID(Redundant Arrays of Independent Disks，磁盘阵列)。
+fdisk //磁盘分割
+fdisk -l 磁盘名称  //输出磁盘的所有分区内容，若仅有fdisk -l 会输出整个系统所有磁盘的分区列表。
+
+2、卷组  [中间部分]
+<1>卷组(Volume Group,VG)：是由一个或多个物理卷所组成的存储池，在卷组上能创建一个或多个逻辑卷。
+
+3、逻辑卷、文件系统  [抽象部分]
+<1>逻辑卷(Logic Volume,LV)：它建立在卷组之上，是一个标准的块设备，在逻辑卷之上可以建立文件系统。
+<2>文件系统：对应逻辑卷，是真正的用户接口。 
+df -h 查看文件系统及其挂载点
+
+四、wsl操作例子
+http://blog.sina.com.cn/s/blog_c300947d0101llv4.html
+0、命令储备：
+<1>df -h
+<2>fdisk -l / fdisk /dev/vda
+<3>lvdisplay
+<4>pvdisplay
+<5>vgdisplay	
+<6>partprobe
+<7>pvcreate
+<8>vgextend
+<9>lvextend
+<10>xfs_growfs
+
+初始状态
+[root@opencos lib]# df -h
+Filesystem               Size  Used Avail Use% Mounted on
+/dev/mapper/centos-root   39G   32G  7.2G  82% /
+devtmpfs                 7.9G     0  7.9G   0% /dev
+tmpfs                    7.9G   84K  7.9G   1% /dev/shm
+tmpfs                    7.9G   26M  7.9G   1% /run
+tmpfs                    7.9G     0  7.9G   0% /sys/fs/cgroup
+/dev/mapper/centos-home   19G   18G  1.5G  93% /home
+/dev/vda1                497M  196M  302M  40% /boot
+tmpfs                    1.6G     0  1.6G   0% /run/user/0
+tmpfs                    1.6G   16K  1.6G   1% /run/user/42
+[root@opencos lib]# lvdisplay 
+  --- Logical volume ---
+  LV Path                /dev/centos/swap
+  LV Name                swap
+  VG Name                centos
+  LV UUID                9axh88-JP2m-hL9P-nhjk-Cqco-l67s-cEeW2v
+  LV Write Access        read/write
+  LV Creation host, time localhost, 2014-10-15 14:52:16 +0800
+  LV Status              available
+  # open                 2
+  LV Size                2.03 GiB
+  Current LE             520
+  Segments               1
+  Allocation             inherit
+  Read ahead sectors     auto
+  - currently set to     8192
+  Block device           253:0
+   
+  --- Logical volume ---
+  LV Path                /dev/centos/home
+  LV Name                home
+  VG Name                centos
+  LV UUID                Corf4H-7CrN-0hgK-Pqqe-2ELf-SuZf-gr1076
+  LV Write Access        read/write
+  LV Creation host, time localhost, 2014-10-15 14:52:17 +0800
+  LV Status              available
+  # open                 1
+  LV Size                18.86 GiB
+  Current LE             4827
+  Segments               1
+  Allocation             inherit
+  Read ahead sectors     auto
+  - currently set to     8192
+  Block device           253:1
+   
+  --- Logical volume ---
+  LV Path                /dev/centos/root
+  LV Name                root
+  VG Name                centos
+  LV UUID                1TmXpz-tXjc-tgIX-rftG-1mSA-ibEi-HJWfs5
+  LV Write Access        read/write
+  LV Creation host, time localhost, 2014-10-15 14:52:17 +0800
+  LV Status              available
+  # open                 1
+  LV Size                38.62 GiB
+  Current LE             9887
+  Segments               1
+  Allocation             inherit
+  Read ahead sectors     auto
+  - currently set to     8192
+  Block device           253:2
+
+[root@opencos lib]# pvdisplay 
+  --- Physical volume ---
+  PV Name               /dev/vda2
+  VG Name               centos
+  PV Size               59.51 GiB / not usable 3.00 MiB
+  Allocatable           yes (but full)
+  PE Size               4.00 MiB
+  Total PE              15234
+  Free PE               0
+  Allocated PE          15234
+  PV UUID               1kakCd-Vsts-VXni-07X8-vw48-A89b-6N2Xce  
+   
+1、fdisk -l 
+Disk /dev/vda: 85.9 GB, 85899345920 bytes, 167772160 sectors
+Units = sectors of 1 * 512 = 512 bytes
+Sector size (logical/physical): 512 bytes / 512 bytes
+I/O size (minimum/optimal): 512 bytes / 512 bytes
+Disk label type: dos
+Disk identifier: 0x000bcbe9
+
+   Device Boot      Start         End      Blocks   Id  System
+/dev/vda1   *        2048     1026047      512000   83  Linux
+/dev/vda2         1026048   125829119    62401536   8e  Linux LVM
+
+Disk /dev/vdb: 10.7 GB, 10737418240 bytes, 20971520 sectors
+Units = sectors of 1 * 512 = 512 bytes
+Sector size (logical/physical): 512 bytes / 512 bytes
+I/O size (minimum/optimal): 512 bytes / 512 bytes
+
+
+Disk /dev/mapper/centos-swap: 2181 MB, 2181038080 bytes, 4259840 sectors
+Units = sectors of 1 * 512 = 512 bytes
+Sector size (logical/physical): 512 bytes / 512 bytes
+I/O size (minimum/optimal): 512 bytes / 512 bytes
+
+
+Disk /dev/mapper/centos-home: 20.2 GB, 20245905408 bytes, 39542784 sectors
+Units = sectors of 1 * 512 = 512 bytes
+Sector size (logical/physical): 512 bytes / 512 bytes
+I/O size (minimum/optimal): 512 bytes / 512 bytes
+
+
+Disk /dev/mapper/centos-root: 41.5 GB, 41469083648 bytes, 80994304 sectors
+Units = sectors of 1 * 512 = 512 bytes
+Sector size (logical/physical): 512 bytes / 512 bytes
+I/O size (minimum/optimal): 512 bytes / 512 bytes
+
+
+Disk /dev/mapper/docker-253:2-136370676-pool: 107.4 GB, 107374182400 bytes, 209715200 sectors
+Units = sectors of 1 * 512 = 512 bytes
+Sector size (logical/physical): 512 bytes / 512 bytes
+I/O size (minimum/optimal): 65536 bytes / 65536 bytes
+
+
+Disk /dev/mapper/docker-253:2-136370676-e9c41c7d16c20c8d754cf9cd3cebf8daa9ac8d5c6dbf20f469cc49c74edf90da: 10.7 GB, 10737418240 bytes, 20971520 sectors
+Units = sectors of 1 * 512 = 512 bytes
+Sector size (logical/physical): 512 bytes / 512 bytes
+I/O size (minimum/optimal): 65536 bytes / 65536 bytes
+
+
+Disk /dev/mapper/docker-253:2-136370676-eef44969fbd5602e61b59c92bf153bfbc8dca3a4e27cf6efd0e1aa9983decca2: 10.7 GB, 10737418240 bytes, 20971520 sectors
+Units = sectors of 1 * 512 = 512 bytes
+Sector size (logical/physical): 512 bytes / 512 bytes
+I/O size (minimum/optimal): 65536 bytes / 65536 bytes
+
+
+Disk /dev/mapper/docker-253:2-136370676-82976cc162c948640da1b8469f7e06754ee169819e3d1339cccddf775abcaded: 10.7 GB, 10737418240 bytes, 20971520 sectors
+Units = sectors of 1 * 512 = 512 bytes
+Sector size (logical/physical): 512 bytes / 512 bytes
+I/O size (minimum/optimal): 65536 bytes / 65536 bytes
+
+
+Disk /dev/mapper/docker-253:2-136370676-e8b9002f050b82d463b07700328aeba45c12e3d74d75540f9cf2af3787e3ce7d: 10.7 GB, 10737418240 bytes, 20971520 sectors
+Units = sectors of 1 * 512 = 512 bytes
+Sector size (logical/physical): 512 bytes / 512 bytes
+I/O size (minimum/optimal): 65536 bytes / 65536 bytes
+
+
+Disk /dev/mapper/docker-253:2-136370676-a00c459d6a05f3f3465643962502a983261cb0b2e03428cad42e0bda1c4b2f5c: 10.7 GB, 10737418240 bytes, 20971520 sectors
+Units = sectors of 1 * 512 = 512 bytes
+Sector size (logical/physical): 512 bytes / 512 bytes
+I/O size (minimum/optimal): 65536 bytes / 65536 bytes
+
+2、[root@opencos lib]# fdisk /dev/vda
+
+Command (m for help): m
+Command action
+   a   toggle a bootable flag
+   b   edit bsd disklabel
+   c   toggle the dos compatibility flag
+   d   delete a partition
+   g   create a new empty GPT partition table
+   G   create an IRIX (SGI) partition table
+   l   list known partition types
+   m   print this menu
+   n   add a new partition
+   o   create a new empty DOS partition table
+   p   print the partition table
+   q   quit without saving changes
+   s   create a new empty Sun disklabel
+   t   change a partition's system id
+   u   change display/entry units
+   v   verify the partition table
+   w   write table to disk and exit
+   x   extra functionality (experts only)
+
+Command (m for help): n
+Partition type:
+   p   primary (2 primary, 0 extended, 2 free)
+   e   extended
+Select (default p): p
+Partition number (3,4, default 3): 
+First sector (125829120-167772159, default 125829120): 
+Using default value 125829120
+Last sector, +sectors or +size{K,M,G} (125829120-167772159, default 167772159): 
+Using default value 167772159
+Partition 3 of type Linux and of size 20 GiB is set
+
+Command (m for help): t
+Partition number (1-3, default 3): 
+Hex code (type L to list all codes): l    
+
+ 0  Empty           24  NEC DOS         81  Minix / old Lin bf  Solaris        
+ 1  FAT12           27  Hidden NTFS Win 82  Linux swap / So c1  DRDOS/sec (FAT-
+ 2  XENIX root      39  Plan 9          83  Linux           c4  DRDOS/sec (FAT-
+ 3  XENIX usr       3c  PartitionMagic  84  OS/2 hidden C:  c6  DRDOS/sec (FAT-
+ 4  FAT16 <32M      40  Venix 80286     85  Linux extended  c7  Syrinx         
+ 5  Extended        41  PPC PReP Boot   86  NTFS volume set da  Non-FS data    
+ 6  FAT16           42  SFS             87  NTFS volume set db  CP/M / CTOS / .
+ 7  HPFS/NTFS/exFAT 4d  QNX4.x          88  Linux plaintext de  Dell Utility   
+ 8  AIX             4e  QNX4.x 2nd part 8e  Linux LVM       df  BootIt         
+ 9  AIX bootable    4f  QNX4.x 3rd part 93  Amoeba          e1  DOS access     
+ a  OS/2 Boot Manag 50  OnTrack DM      94  Amoeba BBT      e3  DOS R/O        
+ b  W95 FAT32       51  OnTrack DM6 Aux 9f  BSD/OS          e4  SpeedStor      
+ c  W95 FAT32 (LBA) 52  CP/M            a0  IBM Thinkpad hi eb  BeOS fs        
+ e  W95 FAT16 (LBA) 53  OnTrack DM6 Aux a5  FreeBSD         ee  GPT            
+ f  W95 Ext'd (LBA) 54  OnTrackDM6      a6  OpenBSD         ef  EFI (FAT-12/16/
+10  OPUS            55  EZ-Drive        a7  NeXTSTEP        f0  Linux/PA-RISC b
+11  Hidden FAT12    56  Golden Bow      a8  Darwin UFS      f1  SpeedStor      
+12  Compaq diagnost 5c  Priam Edisk     a9  NetBSD          f4  SpeedStor      
+14  Hidden FAT16 <3 61  SpeedStor       ab  Darwin boot     f2  DOS secondary  
+16  Hidden FAT16    63  GNU HURD or Sys af  HFS / HFS+      fb  VMware VMFS    
+17  Hidden HPFS/NTF 64  Novell Netware  b7  BSDI fs         fc  VMware VMKCORE 
+18  AST SmartSleep  65  Novell Netware  b8  BSDI swap       fd  Linux raid auto
+1b  Hidden W95 FAT3 70  DiskSecure Mult bb  Boot Wizard hid fe  LANstep        
+1c  Hidden W95 FAT3 75  PC/IX           be  Solaris boot    ff  BBT            
+1e  Hidden W95 FAT1 80  Old Minix      
+Hex code (type L to list all codes): 8e
+Changed type of partition 'Linux' to 'Linux LVM'
+
+Command (m for help): w
+The partition table has been altered!
+
+Calling ioctl() to re-read partition table.
+
+WARNING: Re-reading the partition table failed with error 16: Device or resource busy.
+The kernel still uses the old table. The new table will be used at
+the next reboot or after you run partprobe(8) or kpartx(8)
+Syncing disks.
+
+3、[root@opencos lib]# fdisk -l
+
+Disk /dev/vda: 85.9 GB, 85899345920 bytes, 167772160 sectors
+Units = sectors of 1 * 512 = 512 bytes
+Sector size (logical/physical): 512 bytes / 512 bytes
+I/O size (minimum/optimal): 512 bytes / 512 bytes
+Disk label type: dos
+Disk identifier: 0x000bcbe9
+
+   Device Boot      Start         End      Blocks   Id  System
+/dev/vda1   *        2048     1026047      512000   83  Linux
+/dev/vda2         1026048   125829119    62401536   8e  Linux LVM
+/dev/vda3       125829120   167772159    20971520   8e  Linux LVM
+
+Disk /dev/vdb: 10.7 GB, 10737418240 bytes, 20971520 sectors
+Units = sectors of 1 * 512 = 512 bytes
+Sector size (logical/physical): 512 bytes / 512 bytes
+I/O size (minimum/optimal): 512 bytes / 512 bytes
+
+
+Disk /dev/mapper/centos-swap: 2181 MB, 2181038080 bytes, 4259840 sectors
+Units = sectors of 1 * 512 = 512 bytes
+Sector size (logical/physical): 512 bytes / 512 bytes
+I/O size (minimum/optimal): 512 bytes / 512 bytes
+
+
+Disk /dev/mapper/centos-home: 20.2 GB, 20245905408 bytes, 39542784 sectors
+Units = sectors of 1 * 512 = 512 bytes
+Sector size (logical/physical): 512 bytes / 512 bytes
+I/O size (minimum/optimal): 512 bytes / 512 bytes
+
+
+Disk /dev/mapper/centos-root: 41.5 GB, 41469083648 bytes, 80994304 sectors
+Units = sectors of 1 * 512 = 512 bytes
+Sector size (logical/physical): 512 bytes / 512 bytes
+I/O size (minimum/optimal): 512 bytes / 512 bytes
+
+
+Disk /dev/mapper/docker-253:2-136370676-pool: 107.4 GB, 107374182400 bytes, 209715200 sectors
+Units = sectors of 1 * 512 = 512 bytes
+Sector size (logical/physical): 512 bytes / 512 bytes
+I/O size (minimum/optimal): 65536 bytes / 65536 bytes
+
+
+Disk /dev/mapper/docker-253:2-136370676-e9c41c7d16c20c8d754cf9cd3cebf8daa9ac8d5c6dbf20f469cc49c74edf90da: 10.7 GB, 10737418240 bytes, 20971520 sectors
+Units = sectors of 1 * 512 = 512 bytes
+Sector size (logical/physical): 512 bytes / 512 bytes
+I/O size (minimum/optimal): 65536 bytes / 65536 bytes
+
+
+Disk /dev/mapper/docker-253:2-136370676-eef44969fbd5602e61b59c92bf153bfbc8dca3a4e27cf6efd0e1aa9983decca2: 10.7 GB, 10737418240 bytes, 20971520 sectors
+Units = sectors of 1 * 512 = 512 bytes
+Sector size (logical/physical): 512 bytes / 512 bytes
+I/O size (minimum/optimal): 65536 bytes / 65536 bytes
+
+
+Disk /dev/mapper/docker-253:2-136370676-82976cc162c948640da1b8469f7e06754ee169819e3d1339cccddf775abcaded: 10.7 GB, 10737418240 bytes, 20971520 sectors
+Units = sectors of 1 * 512 = 512 bytes
+Sector size (logical/physical): 512 bytes / 512 bytes
+I/O size (minimum/optimal): 65536 bytes / 65536 bytes
+
+
+Disk /dev/mapper/docker-253:2-136370676-e8b9002f050b82d463b07700328aeba45c12e3d74d75540f9cf2af3787e3ce7d: 10.7 GB, 10737418240 bytes, 20971520 sectors
+Units = sectors of 1 * 512 = 512 bytes
+Sector size (logical/physical): 512 bytes / 512 bytes
+I/O size (minimum/optimal): 65536 bytes / 65536 bytes
+
+
+Disk /dev/mapper/docker-253:2-136370676-a00c459d6a05f3f3465643962502a983261cb0b2e03428cad42e0bda1c4b2f5c: 10.7 GB, 10737418240 bytes, 20971520 sectors
+Units = sectors of 1 * 512 = 512 bytes
+Sector size (logical/physical): 512 bytes / 512 bytes
+I/O size (minimum/optimal): 65536 bytes / 65536 bytes
+
+4、
+[root@opencos lib]# partprobe /dev/vda
+[root@opencos lib]# pvcreate /dev/vda3      
+  Physical volume "/dev/vda3" successfully created
+[root@opencos lib]# pvdisplay 
+  --- Physical volume ---
+  PV Name               /dev/vda2
+  VG Name               centos
+  PV Size               59.51 GiB / not usable 3.00 MiB
+  Allocatable           yes (but full)
+  PE Size               4.00 MiB
+  Total PE              15234
+  Free PE               0
+  Allocated PE          15234
+  PV UUID               1kakCd-Vsts-VXni-07X8-vw48-A89b-6N2Xce
+   
+  "/dev/vda3" is a new physical volume of "20.00 GiB"
+  --- NEW Physical volume ---
+  PV Name               /dev/vda3
+  VG Name               
+  PV Size               20.00 GiB
+  Allocatable           NO
+  PE Size               0   
+  Total PE              0
+  Free PE               0
+  Allocated PE          0
+  PV UUID               sZPDfb-wI9F-Jbzf-K9c6-6XM5-eNDL-PNMftj
+   
+5、
+[root@opencos lib]# vgdisplay 
+  --- Volume group ---
+  VG Name               centos
+  System ID             
+  Format                lvm2
+  Metadata Areas        1
+  Metadata Sequence No  4
+  VG Access             read/write
+  VG Status             resizable
+  MAX LV                0
+  Cur LV                3
+  Open LV               3
+  Max PV                0
+  Cur PV                1
+  Act PV                1
+  VG Size               59.51 GiB
+  PE Size               4.00 MiB
+  Total PE              15234
+  Alloc PE / Size       15234 / 59.51 GiB
+  Free  PE / Size       0 / 0   
+  VG UUID               Z1Tils-Vc1c-nTVy-W9q0-VVyN-Q5s9-bYetWw
+
+[root@opencos lib]# vgextend centos /dev/vda3
+  Volume group "centos" successfully extended
+ 
+[root@opencos lib]# vgdisplay 
+  --- Volume group ---
+  VG Name               centos
+  System ID             
+  Format                lvm2
+  Metadata Areas        2
+  Metadata Sequence No  5
+  VG Access             read/write
+  VG Status             resizable
+  MAX LV                0
+  Cur LV                3
+  Open LV               3
+  Max PV                0
+  Cur PV                2
+  Act PV                2
+  VG Size               79.50 GiB
+  PE Size               4.00 MiB
+  Total PE              20353
+  Alloc PE / Size       15234 / 59.51 GiB
+  Free  PE / Size       5119 / 20.00 GiB
+  VG UUID               Z1Tils-Vc1c-nTVy-W9q0-VVyN-Q5s9-bYetWw
+  
+[root@opencos lib]# lvdisplay 
+  --- Logical volume ---
+  LV Path                /dev/centos/swap
+  LV Name                swap
+  VG Name                centos
+  LV UUID                9axh88-JP2m-hL9P-nhjk-Cqco-l67s-cEeW2v
+  LV Write Access        read/write
+  LV Creation host, time localhost, 2014-10-15 14:52:16 +0800
+  LV Status              available
+  # open                 2
+  LV Size                2.03 GiB
+  Current LE             520
+  Segments               1
+  Allocation             inherit
+  Read ahead sectors     auto
+  - currently set to     8192
+  Block device           253:0
+   
+  --- Logical volume ---
+  LV Path                /dev/centos/home
+  LV Name                home
+  VG Name                centos
+  LV UUID                Corf4H-7CrN-0hgK-Pqqe-2ELf-SuZf-gr1076
+  LV Write Access        read/write
+  LV Creation host, time localhost, 2014-10-15 14:52:17 +0800
+  LV Status              available
+  # open                 1
+  LV Size                18.86 GiB
+  Current LE             4827
+  Segments               1
+  Allocation             inherit
+  Read ahead sectors     auto
+  - currently set to     8192
+  Block device           253:1
+   
+  --- Logical volume ---
+  LV Path                /dev/centos/root
+  LV Name                root
+  VG Name                centos
+  LV UUID                1TmXpz-tXjc-tgIX-rftG-1mSA-ibEi-HJWfs5
+  LV Write Access        read/write
+  LV Creation host, time localhost, 2014-10-15 14:52:17 +0800
+  LV Status              available
+  # open                 1
+  LV Size                38.62 GiB
+  Current LE             9887
+  Segments               1
+  Allocation             inherit
+  Read ahead sectors     auto
+  - currently set to     8192
+  Block device           253:2
+  
+6、
+[root@opencos lib]# lvextend -L+20G /dev/centos/root
+  Insufficient free space: 5120 extents needed, but only 5119 available
+[root@opencos lib]# lvextend -L+19G /dev/centos/root  
+  Size of logical volume centos/root changed from 38.62 GiB (9887 extents) to 57.62 GiB (14751 extents).
+  Logical volume root successfully resized.
+  
+7、resize2fs与文件系统格式不匹配
+[root@opencos lib]# resize2fs /dev/centos/root   
+resize2fs 1.42.9 (28-Dec-2013)
+resize2fs: Bad magic number in super-block while trying to open /dev/centos/root
+Couldn't find valid filesystem superblock.
+
+8、xfs_growfs对应当前文件系统
+[root@opencos lib]# xfs_growfs /dev/centos/root 
+meta-data=/dev/mapper/centos-root isize=256    agcount=4, agsize=2531072 blks
+         =                       sectsz=512   attr=2, projid32bit=1
+         =                       crc=0        finobt=0
+data     =                       bsize=4096   blocks=10124288, imaxpct=25
+         =                       sunit=0      swidth=0 blks
+naming   =version 2              bsize=4096   ascii-ci=0 ftype=0
+log      =internal               bsize=4096   blocks=4943, version=2
+         =                       sectsz=512   sunit=0 blks, lazy-count=1
+realtime =none                   extsz=4096   blocks=0, rtextents=0
+data blocks changed from 10124288 to 15105024
+
+9、最终
+[root@opencos lib]# df -h
+Filesystem               Size  Used Avail Use% Mounted on
+/dev/mapper/centos-root   58G   32G   26G  56% /
+devtmpfs                 7.9G     0  7.9G   0% /dev
+tmpfs                    7.9G   84K  7.9G   1% /dev/shm
+tmpfs                    7.9G   34M  7.9G   1% /run
+tmpfs                    7.9G     0  7.9G   0% /sys/fs/cgroup
+/dev/mapper/centos-home   19G   18G  1.5G  93% /home
+/dev/vda1                497M  196M  302M  40% /boot
+tmpfs                    1.6G     0  1.6G   0% /run/user/0
+tmpfs                    1.6G   16K  1.6G   1% /run/user/42
+
+五、fdisk -l详见
+[root@opencos ~]# fdisk -l
+
+Disk /dev/vda: 85.9 GB, 85899345920 bytes, 167772160 sectors
+Units = sectors of 1 * 512 = 512 bytes
+Sector size (logical/physical): 512 bytes / 512 bytes
+I/O size (minimum/optimal): 512 bytes / 512 bytes
+Disk label type: dos
+Disk identifier: 0x000bcbe9
+
+   Device Boot      Start         End      Blocks   Id  System
+/dev/vda1   *        2048     1026047      512000   83  Linux
+/dev/vda2         1026048   125829119    62401536   8e  Linux LVM
+
+Disk /dev/mapper/centos-swap: 2181 MB, 2181038080 bytes, 4259840 sectors
+Units = sectors of 1 * 512 = 512 bytes
+Sector size (logical/physical): 512 bytes / 512 bytes
+I/O size (minimum/optimal): 512 bytes / 512 bytes
+
+
+Disk /dev/mapper/centos-home: 20.2 GB, 20245905408 bytes, 39542784 sectors
+Units = sectors of 1 * 512 = 512 bytes
+Sector size (logical/physical): 512 bytes / 512 bytes
+I/O size (minimum/optimal): 512 bytes / 512 bytes
+
+
+Disk /dev/mapper/centos-root: 41.5 GB, 41469083648 bytes, 80994304 sectors
+Units = sectors of 1 * 512 = 512 bytes
+Sector size (logical/physical): 512 bytes / 512 bytes
+I/O size (minimum/optimal): 512 bytes / 512 bytes
+
+
+Disk /dev/mapper/docker-253:2-136370676-pool: 107.4 GB, 107374182400 bytes, 209715200 sectors
+Units = sectors of 1 * 512 = 512 bytes
+Sector size (logical/physical): 512 bytes / 512 bytes
+I/O size (minimum/optimal): 65536 bytes / 65536 bytes
+
+详解：
+Disk /dev/vda: 85.9 GB, 85899345920 bytes, 167772160 sectors
+//块设备(磁盘)名称为/dev/vda，此设备大小为85.9 GB(该数值不准确，85899345920为准确值 即为80G)，拥有167772160个扇区
+
+Units = sectors of 1 * 512 = 512 bytes
+Sector size (logical/physical): 512 bytes / 512 bytes
+I/O size (minimum/optimal): 512 bytes / 512 bytes
+
+-------------------------------------------------------------------------------------------------------
+一、新建vg和lv  http://www.111cn.net/sys/linux/115210.htm
+0、显示
+# lvs //查看LV列表和基础信息
+# lvdisplay //查看LV详细信息
+
+# pvs //查看LV列表和基础信息
+# pvdisplay //查看LV详细信息
+
+# vgdisplay -v
+
+1、使用三块 8 GB 的磁盘（/dev/sdb、/dev/sdc 和 /dev/sdd）分别创建三个物理卷。
+既可以直接在整个设备上创建 PV，也可以先分区在创建。
+在这里我们选择第一种方式，如果你决定使用第二种，要确保每个分区的类型都是 8e。
+# pvcreate /dev/sdb /dev/sdc /dev/sdd
+
+2、vgcreate
+# vgcreate vg00 /dev/sdb /dev/sdc  //创建vg00卷组，且包含sdb和sdc磁盘空间，后续可以增加
+
+3、lvcreate
+参数 -n 用于为 LV 指定名称，而 -L 用于设定固定的大小，还有 -l （小写的 L）在 VG 的预留空间中用于指定百分比大小的空间。
+# lvcreate -n vol_projects -L 10G vg00
+# lvcreate -n vol_backups -l 100%FREE vg00
+当谈到创建逻辑卷，空间的分配必须考虑到当下和以后的需求。根据每个逻辑卷的用途来命名是一个好的做法。
+
+4、在使用每个逻辑卷之前，需要先在上面创建文件系统。
+这里我们拿ext4来做举例，因为对于每个LV的大小，ext4既可以增大又可以减小（相对的xfs就只允许增大）：
+# mkfs.ext4 /dev/vg00/vol_projects
+# mkfs.ext4 /dev/vg00/vol_backups
+
+5、调整逻辑卷
+vol_backups 中的空间即将用完，而 vol_projects 中还有富余的空间。
+由于 LVM 的特性，我们可以轻易的减小后者的大小（比方说 2.5 GB），
+并将其分配给前者，与此同时调整每个文件系统的大小。
+# lvreduce -L -2.5G -r /dev/vg00/vol_projects   //-r:resizefs
+# lvextend -l +100%FREE -r /dev/vg00/vol_backups
+在调整逻辑卷的时候，其中包含的减号 (-) 或加号 (+) 是十分重要的。否则 LV 将会被设置成指定的大小，而非调整指定大小。
+
+6、扩充卷组(如果需要的话)
+# vgextend vg00 /dev/sdd
+
+# vgreduce vg00 /dev/sdd  //从vg中移除sdd
+
+7、在启动和需求时挂载逻辑卷
+<1>我们需要找出它的 UUID（用于识别一个格式化存储设备的唯一且不变的属性）。
+要做到这点，可使用 blkid 加每个设备的路径来实现：
+# blkid /dev/vg00/vol_projects
+# blkid /dev/vg00/vol_backups
+
+<2>为每个lv创建挂载点
+# mkdir /home/projects
+# mkdir /home/backups
+
+<3>在/etc/fstab中加入相应的条目
+UUID=b85df913-580f-461c-844f-546d8cde4646 /home/projects  ext4  defaults 0 0
+UUID=e1929239-5087-44b1-9396-53e09db6eb9e /home/backups	  ext4  defaults 0 0
+
+<4>挂载LV
+mount -a //自动挂载 /etc/fstab 里面的内容
+mount | grep home  //查看
+
+--------------------------------------------------------------------------------
+补充：0616
+1、LVM的访问高性能
+LVM通过strping来提高系统访问数据的速度。strping技术将LV的数据分布到不同PV上访问这些数据时可以进行并行的读写。
+我们在创建LV时可以指定LV在PV上的分布位置，我们将经常被访问的LV放在PV的热点位置可以提高访问速度。
+
+2、报表项目如何使用磁阵//个人理解
+比如将11块1T的硬盘制作RAID5，得到一个可用空间为10T的磁阵。
+那么假设该磁阵对应的设备为/dev/sda，我们可以将该设备格式化后(可以不化分成多个分区)制成pv，之后挂到vg，在分给某个lv。
+这样在使用这个lv时实际使用的就是这个磁阵，并且磁阵内部的多个硬盘之间可以并行读写。
+
+//个人感觉不需要使用LVM，直接挂载磁阵设备就可以了。LVM的唯一优势可能是方便以后扩充。
+//如/dev/sda这样的设备是不能直接mount的，必须分区格式化之后才能挂载。
+
+3、LVM灾难修复
+https://www.ibm.com/developerworks/cn/linux/l-cn-pclvm-rstr/
+
+4、RAID 0/5...下磁盘不能随便拔出
+
+热插拔是指可以不关机换盘，但要先在软件上把盘卸载掉，并不是可以直接拔盘。
+
+Hot-spare
+
+https://www.v2ex.com/t/188873  //惨痛教训
+http://bbs.51cto.com/thread-1158162-1.html  //惨痛教训
+
+--------------------------------------------------------------------------------
+补充2017.08.05 
+1、超过2/4T的磁盘使用parted分区
+http://www.cnblogs.com/hyang0/p/6434300.html
+<1>parted /dev/sdc  //相当于先parted再select /dev/sdc
+
+<2>mklabel gpt  	 //将MBR磁盘格式化为GPT (相反操作:(parted) mklable msdos //将GPT磁盘转换为MBR磁盘，fdisk使用的是MBR磁盘)
+					 //MBR和GPT是不同的磁盘分区方式
+					 
+<3>mkpart primary 0 15T  //0-15一个分区
+   mkpart primary 15T -1 //剩余的一个分区
+   如果：mkpart primary 0 -1，表示将整个磁盘化为一个分区
+   
+<4>p	//打印磁盘信息
+Model: Adaptec data (scsi)
+Disk /dev/sdc: 16.0TB
+Sector size (logical/physical): 512B/512B
+Partition Table: gpt
+Disk Flags: 
+
+Number  Start    End      Size    File system  Name     标志
+ 1      17.4kB   5000GB   5000GB               primary
+ 2      5000GB   10000GB  5000GB               primary
+ 3      10000GB  16.0TB   5999GB               primary
+ 
+<5>quit //退出
+Information: You may need to update /etc/fstab. 
+
+<6>partprobe /dev/sdc
+
+<7>之后通过LVM挂载各个卷，详见LVM说明文档。

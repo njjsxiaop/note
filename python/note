@@ -1,0 +1,71 @@
+0、资料
+https://github.com/jobbole/awesome-python-cn  //中文
+https://github.com/vinta/awesome-python       //英文
+
+----------------------------------------------------------------
+python3.6 编译安装 https://my.oschina.net/tasker/blog/831092
+<1>下载  https://www.python.org/downloads/release/python-360/
+<2>cd /usr/local/src
+(wget https://www.python.org/ftp/python/3.6.0/Python-3.6.0.tgz)
+1)tar -zxvf /usr/local/src/Python-3.6.0.tgz && cd Python-3.6.0
+
+2)mkdir /usr/local/python3
+./configure --prefix=/usr/local/python3 --with-thread
+make && make altinstall  
+//这里使用make altinstall安装在/usr/local/python3/bin目录下，如果使用make install，将会安装在/usr/bin/目录中。
+
+3)# 关键一步，建立链接 
+ln -s /usr/local/python3/bin/python3.6 /usr/bin/python3          # 可直接使用 "python3"
+ln -s /usr/local/python3/bin/pip3.6  /usr/bin/pip3               # 可直接使用 "pip3"
+
+4)# 最后测试下 
+python3
+pip3
+
+注：
+1、Python Shell 中敲击方向键显示「^[[C^[[D]
+安装yum -y install readline-devel，然后再重新编译安装python。
+----------------------------------------------------------------
+1、#!/usr/bin/Python 与 #!/usr/bin/env python
+脚本语言的第一行，目的就是指出，文件中的代码用什么可执行程序去执行。
+
+<1>#!/usr/bin/Python是告诉操作系统执行这个脚本的时候，调用/usr/bin下的python解释器；
+<2>#!/usr/bin/env python这种用法是为了防止操作系统用户没有将python装在默认的/usr/bin路径里。
+当系统看到这一行的时候，首先会到env设置里查找python的安装路径，再调用对应路径下的解释器程序完成操作。
+<3>#!/usr/bin/python相当于写死了python路径;#!/usr/bin/env python会去环境设置寻找python目录,推荐这种写法。
+
+2、random模块
+<1>randrange() //返回指定递增基数集合中的一个随机数，基数缺省值为1
+random.randrange ([start,] stop [,step])
+参数
+start -- 指定范围内的开始值，包含在范围内。
+stop -- 指定范围内的结束值，不包含在范围内。
+step -- 指定递增基数。
+返回值
+从给定的范围返回随机项。
+
+<2>randint()  //Return random integer in range [a, b], including both end points
+def randint(self, a, b):
+	return self.randrange(a, b+1)
+
+random.randint(12, 20) #生成的随机数n: 12 <= n <= 20 
+random.randint(20, 20) #结果永远是20 
+random.randint(20, 10) #该语句是错误的
+
+3、print '',这里的逗号，可以让后面要输出的内容不换行。会用空格隔开。
+print 'Refilling candy...',
+try:
+	candytray.release()
+except ValueError:
+	print 'full, skipping'
+else:
+	print 'OK'
+	
+4、内置函数help()的使用
+查看python所有的modules：help("modules")
+单看python所有的modules中包含指定字符串的modules： help("modules yourstr")
+查看python中常见的topics： help("topics")
+查看python标准库中的module：import os.path + help("os.path")
+查看python内置的类型：help("list")
+查看python类型的成员方法：help("str.find") 
+查看python内置函数：help("open")
